@@ -2,14 +2,15 @@ package com.sum_news_BE.domain;
 
 import java.time.LocalDateTime;
 
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import lombok.Builder;
-import lombok.Getter;
 
-@Document("user")
-@Getter
+@Document(collection = "user")
+@Data
 @Builder
 public class User{
 
@@ -26,4 +27,6 @@ public class User{
 
 	private LocalDateTime updated_at;
 
+	@DBRef
+	private UserSetting userSetting;
 }

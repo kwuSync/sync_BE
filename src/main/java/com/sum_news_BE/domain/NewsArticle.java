@@ -1,16 +1,18 @@
 package com.sum_news_BE.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Builder;
-import lombok.Getter;
 
-@Getter
+@Data
 @Builder
-@Document("news_article")
+@Document(collection = "news_article")
 public class NewsArticle {
 
 	@Id
@@ -26,5 +28,7 @@ public class NewsArticle {
 
 	private String source;
 
+	@DBRef
+	private List<NewsComment> comments;
 
 }
