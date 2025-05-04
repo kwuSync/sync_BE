@@ -32,7 +32,7 @@ public class NewsQueryServiceImpl implements NewsQueryService {
             dto.setId(article.getId());
             dto.setTitle(article.getTitle());
             dto.setSource(article.getSource());
-            dto.setPublished_at(article.getPublished_at());
+            dto.setPublishedAt(article.getPublished_at());
             return dto;
         }).collect(Collectors.toList());
     }

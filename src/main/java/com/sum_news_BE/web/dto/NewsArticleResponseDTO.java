@@ -10,9 +10,9 @@ public class NewsArticleResponseDTO { //뉴스 목록 DTO
 
     private String title;
 
-    private String summary_text;
+    private String summaryText;
 
     private String source;
 
-    private LocalDateTime published_at;
+    private LocalDateTime publishedAt;
 }
