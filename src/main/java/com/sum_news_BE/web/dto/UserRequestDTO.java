@@ -11,4 +11,11 @@ public class UserRequestDTO {
         private String password;
         private String name;
     }
+
+    @Getter
+    @Setter
+    public static class LoginDTO {
+        private String userid;
+        private String password;
+    }
 }
