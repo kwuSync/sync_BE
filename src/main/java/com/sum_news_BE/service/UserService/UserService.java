@@ -11,5 +11,5 @@ public interface UserService {
     User login(UserRequestDTO.LoginDTO loginDTO);
     
     // 사용자 조회
-    User getUserById(Integer userid);
+    User getUserById(String userid);
 } 
