@@ -104,9 +104,21 @@ public class TokenServiceImpl implements TokenService {
 	@Override
 	public void logout(String refreshToken) {
 		log.info("로그아웃 시도: {}", refreshToken);
-		String userid = jwtProvider.getUseridFromToken(refreshToken);
-		refreshTokenRepository.deleteByUserid(userid);
-		log.info("로그아웃 완료: {}", userid);
+		
+		// 토큰 유효성 검증
+		if (!jwtProvider.validateToken(refreshToken)) {
+			log.error("유효하지 않은 리프레시 토큰");
+			throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+		}
+
+		try {
+			String userid = jwtProvider.getUseridFromToken(refreshToken);
+			refreshTokenRepository.deleteByUserid(userid);
+			log.info("로그아웃 완료: {}", userid);
+		} catch (Exception e) {
+			log.error("로그아웃 처리 중 에러 발생: {}", e.getMessage(), e);
+			throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.");
+		}
 	}
 
 }

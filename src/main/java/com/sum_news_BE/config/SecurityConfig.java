@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configurers.HttpBasicC
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.sum_news_BE.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	
 	public static final String[] url = {
 		"/",
 		"/swagger-ui/**",
@@ -37,7 +42,8 @@ public class SecurityConfig {
 				.requestMatchers(url).permitAll()
 				.anyRequest().authenticated())
 			.csrf(AbstractHttpConfigurer::disable)
-			.httpBasic(HttpBasicConfigurer::disable);
+			.httpBasic(HttpBasicConfigurer::disable)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
