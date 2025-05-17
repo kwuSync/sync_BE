@@ -1,3 +1,5 @@
+# Develop Branch 받아서 실행
+
 # 커밋 컨벤션
 
 feat : 기능
