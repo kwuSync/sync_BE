@@ -1,9 +1,6 @@
 package com.sum_news_BE.web.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.sum_news_BE.api.ApiResponse;
 import com.sum_news_BE.domain.User;
@@ -37,5 +34,13 @@ public class UserController {
 		User user = userService.login(loginDTO);
 		TokenResponseDTO tokenResponse = tokenService.generateToken(user.getUserid());
 		return ApiResponse.ok("로그인이 완료되었습니다.", tokenResponse);
+	}
+
+
+	@DeleteMapping("/delete")
+	@Operation(summary = "회원탈퇴 API", description = "사용자를 삭제합니다.")
+	public ApiResponse<User> delete(@RequestBody @Valid UserRequestDTO.DeleteDTO deleteDTO) {
+		User user = userService.delete(deleteDTO.getUserid());
+		return ApiResponse.ok("회원탈퇴가 완료되었습니다.", user);
 	}
 }

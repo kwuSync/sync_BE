@@ -12,4 +12,6 @@ public interface UserService {
     
     // 사용자 조회
     User getUserById(String userid);
+
+    User delete(String userid);
 } 

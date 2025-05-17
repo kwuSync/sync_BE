@@ -48,4 +48,12 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(userid)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
+
+    @Override
+    public User delete(String userid) {
+        User user = userRepository.findByUserid(userid)
+                .orElseThrow(()-> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        userRepository.delete(user);
+        return user;
+    }
 } 

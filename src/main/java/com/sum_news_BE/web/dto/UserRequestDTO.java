@@ -18,4 +18,11 @@ public class UserRequestDTO {
         private String userid;
         private String password;
     }
+
+    @Getter
+    @Setter
+    public static class DeleteDTO {
+        private String userid;
+        private String password;
+    }
 }
