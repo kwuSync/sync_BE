@@ -1,4 +1,4 @@
-# Develop Branch 받아서 실행
+# Develop Branch 받아서 test
 
 # 커밋 컨벤션
 
