@@ -43,4 +43,12 @@ public class UserController {
 		User user = userService.delete(deleteDTO.getUserid());
 		return ApiResponse.ok("회원탈퇴가 완료되었습니다.", user);
 	}
+
+	@PostMapping("/logout")
+	@Operation(summary = "로그아웃 API", description = "리프레시 토큰을 삭제하여 로그아웃을 처리합니다.")
+	public ApiResponse<Void> logout(@RequestBody String refreshToken) {
+		refreshToken = refreshToken.replaceAll("^\"|\"$", "");
+		tokenService.logout(refreshToken);
+		return ApiResponse.ok("로그아웃이 완료되었습니다.", null);
+	}
 }
