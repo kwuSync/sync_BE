@@ -36,6 +36,13 @@ public class UserController {
 		return ApiResponse.ok("로그인이 완료되었습니다.", tokenResponse);
 	}
 
+	@PostMapping("/logout")
+	@Operation(summary = "로그아웃 API", description = "리프레시 토큰을 삭제하여 로그아웃을 처리합니다.")
+	public ApiResponse<Void> logout(@RequestBody String refreshToken) {
+		refreshToken = refreshToken.replaceAll("^\"|\"$", "");
+		tokenService.logout(refreshToken);
+		return ApiResponse.ok("로그아웃이 완료되었습니다.", null);
+	}
 
 	@DeleteMapping("/delete")
 	@Operation(summary = "회원탈퇴 API", description = "사용자를 삭제합니다.")
@@ -44,11 +51,10 @@ public class UserController {
 		return ApiResponse.ok("회원탈퇴가 완료되었습니다.", user);
 	}
 
-	@PostMapping("/logout")
-	@Operation(summary = "로그아웃 API", description = "리프레시 토큰을 삭제하여 로그아웃을 처리합니다.")
-	public ApiResponse<Void> logout(@RequestBody String refreshToken) {
-		refreshToken = refreshToken.replaceAll("^\"|\"$", "");
-		tokenService.logout(refreshToken);
-		return ApiResponse.ok("로그아웃이 완료되었습니다.", null);
+	@PatchMapping("/update")
+	@Operation(summary = "사용자 정보 수정 API", description = "사용자의 비밀번호나 이름을 부분적으로 수정합니다.")
+	public ApiResponse<User> update(@RequestBody @Valid UserRequestDTO.UpdateDTO updateDTO) {
+		User user = userService.update(updateDTO);
+		return ApiResponse.ok("사용자 정보가 수정되었습니다.", user);
 	}
 }

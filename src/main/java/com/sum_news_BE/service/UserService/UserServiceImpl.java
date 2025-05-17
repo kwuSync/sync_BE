@@ -56,4 +56,21 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
         return user;
     }
+
+    @Override
+    public User update(UserRequestDTO.UpdateDTO updateDTO) {
+        User user = userRepository.findByUserid(updateDTO.getUserid())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        if (updateDTO.getPassword() != null && !updateDTO.getPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(updateDTO.getPassword());
+            user.setPassword(encodedPassword);
+        }
+
+        if (updateDTO.getName() != null && !updateDTO.getName().isEmpty()) {
+            user.setName(updateDTO.getName());
+        }
+
+        return userRepository.save(user);
+    }
 } 
