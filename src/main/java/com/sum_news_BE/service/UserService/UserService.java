@@ -11,5 +11,11 @@ public interface UserService {
     User login(UserRequestDTO.LoginDTO loginDTO);
     
     // 사용자 조회
-    User getUserById(Integer userid);
+    User getUserById(String userid);
+
+    // 사용자 삭제
+    User delete(String userid);
+
+    // 사용자 정보 수정
+    User update(UserRequestDTO.UpdateDTO updateDTO);
 } 
