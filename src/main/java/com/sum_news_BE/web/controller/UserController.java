@@ -23,14 +23,14 @@ public class UserController {
 
 	@PostMapping("/signup")
 	@Operation(summary = "회원가입 API", description = "새로운 사용자를 등록합니다.")
-	public ApiResponse<User> signUp(@RequestBody @Valid UserRequestDTO.JoinDTO joinDTO) {
+	public ApiResponse<User> signUp(@Valid @RequestBody UserRequestDTO.JoinDTO joinDTO) {
 		User user = userService.joinUser(joinDTO);
 		return ApiResponse.ok("회원가입이 완료되었습니다.", user);
 	}
 
 	@PostMapping("/login")
 	@Operation(summary = "로그인 API", description = "사용자 로그인을 처리하고 JWT 토큰을 발급합니다.")
-	public ApiResponse<TokenResponseDTO> login(@RequestBody @Valid UserRequestDTO.LoginDTO loginDTO) {
+	public ApiResponse<TokenResponseDTO> login(@Valid @RequestBody UserRequestDTO.LoginDTO loginDTO) {
 		User user = userService.login(loginDTO);
 		TokenResponseDTO tokenResponse = tokenService.generateToken(user.getUserid());
 		return ApiResponse.ok("로그인이 완료되었습니다.", tokenResponse);
@@ -46,14 +46,14 @@ public class UserController {
 
 	@DeleteMapping("/delete")
 	@Operation(summary = "회원탈퇴 API", description = "사용자를 삭제합니다.")
-	public ApiResponse<User> delete(@RequestBody @Valid UserRequestDTO.DeleteDTO deleteDTO) {
+	public ApiResponse<User> delete(@Valid @RequestBody UserRequestDTO.DeleteDTO deleteDTO) {
 		User user = userService.delete(deleteDTO.getUserid());
 		return ApiResponse.ok("회원탈퇴가 완료되었습니다.", user);
 	}
 
 	@PatchMapping("/update")
 	@Operation(summary = "사용자 정보 수정 API", description = "사용자의 비밀번호나 이름을 부분적으로 수정합니다.")
-	public ApiResponse<User> update(@RequestBody @Valid UserRequestDTO.UpdateDTO updateDTO) {
+	public ApiResponse<User> update(@Valid @RequestBody UserRequestDTO.UpdateDTO updateDTO) {
 		User user = userService.update(updateDTO);
 		return ApiResponse.ok("사용자 정보가 수정되었습니다.", user);
 	}
