@@ -20,6 +20,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User joinUser(UserRequestDTO.JoinDTO joinDTO) {
+        // 아이디 형식 검증
+        if (!joinDTO.getUserid().matches("^[a-zA-Z0-9]{4,20}$")) {
+            throw new IllegalArgumentException("아이디는 4~20자의 영문자와 숫자만 사용 가능합니다.");
+        }
+
+        // 비밀번호 형식 검증
+        if (!joinDTO.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상의 영문자와 숫자 조합이어야 합니다.");
+        }
+
         // 비밀번호 확인
         if (!joinDTO.getPassword().equals(joinDTO.getPasswordConfirm())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
@@ -75,6 +85,11 @@ public class UserServiceImpl implements UserService {
 
         // 비밀번호 변경 시 비밀번호 확인
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isEmpty()) {
+            // 비밀번호 형식 검증
+            if (!updateDTO.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")) {
+                throw new IllegalArgumentException("비밀번호는 8자 이상의 영문자와 숫자 조합이어야 합니다.");
+            }
+
             if (updateDTO.getPasswordConfirm() == null || updateDTO.getPasswordConfirm().isEmpty()) {
                 throw new IllegalArgumentException("비밀번호 확인을 입력해주세요.");
             }
