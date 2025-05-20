@@ -20,6 +20,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User joinUser(UserRequestDTO.JoinDTO joinDTO) {
+        // 비밀번호 확인
+        if (!joinDTO.getPassword().equals(joinDTO.getPasswordConfirm())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 아이디 중복 확인
+        if (userRepository.findByUserid(joinDTO.getUserid()).isPresent()) {
+            throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
+        }
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(joinDTO.getPassword());
         joinDTO.setPassword(encodedPassword);
@@ -59,14 +69,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(UserRequestDTO.UpdateDTO updateDTO) {
+        // 사용자 조회
         User user = userRepository.findByUserid(updateDTO.getUserid())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        // 비밀번호 변경 시 비밀번호 확인
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isEmpty()) {
+            if (updateDTO.getPasswordConfirm() == null || updateDTO.getPasswordConfirm().isEmpty()) {
+                throw new IllegalArgumentException("비밀번호 확인을 입력해주세요.");
+            }
+            if (!updateDTO.getPassword().equals(updateDTO.getPasswordConfirm())) {
+                throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            }
             String encodedPassword = passwordEncoder.encode(updateDTO.getPassword());
             user.setPassword(encodedPassword);
         }
 
+        // 이름이 제공된 경우에만 업데이트
         if (updateDTO.getName() != null && !updateDTO.getName().isEmpty()) {
             user.setName(updateDTO.getName());
         }
