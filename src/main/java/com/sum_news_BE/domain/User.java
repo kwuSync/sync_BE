@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import lombok.Builder;
 
+
 @Document(collection = "user")
 @Data
 @Builder
@@ -25,10 +26,11 @@ public class User{
 
 	private String name;
 
-	private LocalDateTime created_at;
+	private LocalDateTime createdAt;
 
-	private LocalDateTime updated_at;
+	private LocalDateTime updatedAt;
 
 	@DBRef
 	private UserSetting userSetting;
+
 }
