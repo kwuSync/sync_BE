@@ -13,8 +13,8 @@ public class UserConverter {
 			.userid(joinDTO.getUserid())
 			.password(joinDTO.getPassword())
 			.name(joinDTO.getName())
-			.created_at(LocalDateTime.now())
-			.updated_at(LocalDateTime.now())
+			.createdAt(LocalDateTime.now())
+			.updatedAt(LocalDateTime.now())
 			.build();
 	}
 
