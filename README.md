@@ -15,4 +15,6 @@ refactor : 리팩토링
 
 test : 테스트코드
 
+cicd : 배포 작업
+
 chore : 기타 작업
