@@ -4,121 +4,108 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sum_news_BE.domain.RefreshToken;
+import com.sum_news_BE.domain.User;
 import com.sum_news_BE.repository.RefreshTokenRepository;
+import com.sum_news_BE.repository.UserRepository;
 import com.sum_news_BE.security.JwtProvider;
 import com.sum_news_BE.web.dto.TokenResponseDTO;
-import com.sum_news_BE.domain.User;
-import com.sum_news_BE.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class TokenServiceImpl implements TokenService {
 
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UserRepository userRepository;
-	private static final Logger log = LoggerFactory.getLogger(TokenServiceImpl.class);
 
 	@Override
-	public TokenResponseDTO generateToken(String userid) {
-		System.out.println("토큰 생성 시도: " + userid);
-		String accessToken = jwtProvider.generateAccessToken(userid);
-		System.out.println("AccessToken 생성 성공");
-		String refreshToken = jwtProvider.generateRefreshToken(userid);
-		System.out.println("RefreshToken 생성 성공");
+	public TokenResponseDTO generateToken(String email) {
+		log.info("토큰 생성 시도: {}", email);
+		String accessToken = jwtProvider.generateAccessToken(email);
+		log.info("AccessToken 생성 성공");
 
-		// 리프레시 토큰 저장
-		saveRefreshToken(userid, refreshToken);
-		System.out.println("RefreshToken 저장 성공");
+		String refreshToken = jwtProvider.generateRefreshToken(email);
+		log.info("RefreshToken 생성 성공");
+
+		saveRefreshToken(email, refreshToken);
 
 		return TokenResponseDTO.builder()
-			.accessToken(accessToken)
-			.refreshToken(refreshToken)
-			.build();
-	}
-
-	@Override
-	public TokenResponseDTO reissueToken(String refreshToken) {
-		try {
-			log.info("토큰 재발급 시도: {}", refreshToken);
-			
-			// 리프레시 토큰 유효성 검증
-			if (!jwtProvider.validateToken(refreshToken)) {
-				log.error("리프레시 토큰 유효성 검증 실패");
-				throw new RuntimeException("리프레시 토큰이 유효하지 않습니다.");
-			}
-
-			// 리프레시 토큰으로 사용자 ID 추출
-			String userid = jwtProvider.getUseridFromToken(refreshToken);
-			log.info("리프레시 토큰에서 추출한 사용자 ID: {}", userid);
-
-			// 기존 토큰 삭제
-			refreshTokenRepository.deleteByUserid(userid);
-			log.info("기존 리프레시 토큰 삭제 완료");
-
-			// 사용자 정보 조회
-			User user = userRepository.findByUserid(userid)
-				.orElseThrow(() -> {
-					log.error("사용자를 찾을 수 없음: {}", userid);
-					return new RuntimeException("사용자를 찾을 수 없습니다.");
-				});
-			log.info("사용자 조회 성공: {}", userid);
-
-			// 새로운 토큰 생성
-			String newAccessToken = jwtProvider.generateAccessToken(userid);
-			String newRefreshToken = jwtProvider.generateRefreshToken(userid);
-			log.info("새로운 액세스 토큰 생성: {}", newAccessToken);
-			log.info("새로운 리프레시 토큰 생성: {}", newRefreshToken);
-
-			// DB에 새로운 리프레시 토큰 저장
-			RefreshToken newToken = new RefreshToken(userid, newRefreshToken);
-			refreshTokenRepository.save(newToken);
-			log.info("새로운 리프레시 토큰 저장 성공");
-
-			return TokenResponseDTO.builder()
-				.accessToken(newAccessToken)
-				.refreshToken(newRefreshToken)
+				.accessToken(accessToken)
+				.refreshToken(refreshToken)
 				.build();
-		} catch (Exception e) {
-			log.error("토큰 재발급 중 에러 발생: {}", e.getMessage(), e);
-			throw e;
-		}
 	}
 
 	@Override
-	public void saveRefreshToken(String userid, String refreshToken) {
-		RefreshToken token = new RefreshToken(userid, refreshToken);
-		refreshTokenRepository.save(token);
-	}
-
-	@Override
-	public void deleteRefreshToken(String userid) {
-		refreshTokenRepository.deleteByUserid(userid);
-	}
-
-	@Override
-	public void logout(String refreshToken) {
-		log.info("로그아웃 시도: {}", refreshToken);
-		
-		// 토큰 유효성 검증
+	@Transactional
+	public TokenResponseDTO reissueToken(String refreshToken) {
 		if (!jwtProvider.validateToken(refreshToken)) {
-			log.error("유효하지 않은 리프레시 토큰");
 			throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
 		}
 
-		try {
-			String userid = jwtProvider.getUseridFromToken(refreshToken);
-			refreshTokenRepository.deleteByUserid(userid);
-			log.info("로그아웃 완료: {}", userid);
-		} catch (Exception e) {
-			log.error("로그아웃 처리 중 에러 발생: {}", e.getMessage(), e);
-			throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.");
-		}
+		String email = jwtProvider.getEmailFromToken(refreshToken);
+		log.info("리프레시 토큰에서 추출한 이메일: {}", email);
+
+		// 기존 리프레시 토큰 삭제
+		deleteRefreshToken(email);
+
+		// 사용자 존재 여부 확인
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> {
+					log.error("사용자를 찾을 수 없음: {}", email);
+					return new IllegalArgumentException("존재하지 않는 사용자입니다.");
+				});
+		log.info("사용자 조회 성공: {}", email);
+
+		// 새로운 토큰 발급
+		String newAccessToken = jwtProvider.generateAccessToken(email);
+		String newRefreshToken = jwtProvider.generateRefreshToken(email);
+
+		// 새로운 리프레시 토큰 저장
+		saveRefreshToken(email, newRefreshToken);
+
+		return TokenResponseDTO.builder()
+				.accessToken(newAccessToken)
+				.refreshToken(newRefreshToken)
+				.build();
 	}
 
+	@Override
+	@Transactional
+	public void saveRefreshToken(String email, String refreshToken) {
+		// 기존 리프레시 토큰이 있다면 삭제
+		refreshTokenRepository.findByEmail(email)
+				.ifPresent(refreshTokenRepository::delete);
+
+		// 새로운 리프레시 토큰 저장
+		RefreshToken newRefreshToken = RefreshToken.builder()
+				.email(email)
+				.refreshToken(refreshToken)
+				.build();
+		refreshTokenRepository.save(newRefreshToken);
+		log.info("리프레시 토큰 저장 완료: {}", email);
+	}
+
+	@Override
+	@Transactional
+	public void deleteRefreshToken(String email) {
+		refreshTokenRepository.findByEmail(email)
+				.ifPresent(refreshTokenRepository::delete);
+		log.info("리프레시 토큰 삭제 완료: {}", email);
+	}
+
+	@Override
+	@Transactional
+	public void logout(String refreshToken) {
+		if (!jwtProvider.validateToken(refreshToken)) {
+			throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+		}
+
+		String email = jwtProvider.getEmailFromToken(refreshToken);
+		deleteRefreshToken(email);
+		log.info("로그아웃 완료: {}", email);
+	}
 }

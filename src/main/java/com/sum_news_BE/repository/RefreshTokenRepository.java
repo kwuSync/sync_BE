@@ -9,6 +9,6 @@ import com.sum_news_BE.domain.RefreshToken;
 
 @Repository
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, String> {
-	Optional<RefreshToken> findByUserid(String userid);
-	void deleteByUserid(String userid);
+	Optional<RefreshToken> findByEmail(String email);
+	void deleteByEmail(String email);
 }

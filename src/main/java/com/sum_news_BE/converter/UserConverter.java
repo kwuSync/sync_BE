@@ -10,9 +10,9 @@ public class UserConverter {
 	// 회원가입 시 dto -> entity
 	public static User toUser(UserRequestDTO.JoinDTO joinDTO) {
 		return User.builder()
-			.userid(joinDTO.getUserid())
+			.nickname(joinDTO.getNickname())
+			.email(joinDTO.getEmail())
 			.password(joinDTO.getPassword())
-			.name(joinDTO.getName())
 			.createdAt(LocalDateTime.now())
 			.updatedAt(LocalDateTime.now())
 			.build();

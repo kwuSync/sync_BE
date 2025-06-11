@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/mail")
-@Tag(name = "Mail", description = "이메일 인증 관련 API")
+@Tag(name = "mail", description = "이메일 인증 관련 API")
 public class MailController {
 	private final MailService mailService;
 	private final MailVerificationService mailVerificationService;

@@ -24,7 +24,9 @@ import com.sum_news_BE.web.dto.NewsResponseDTO;
 import com.sum_news_BE.web.dto.NewsSummaryResponseDTO;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -69,17 +71,17 @@ public class NewsServiceImpl implements NewsService {
 		if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == "anonymous") {
 			System.out.println("인증되지 않았거나 익명인 사용자입니다.");
 		} else {
-			String currentUserId = null;
+			String currentUserEmail = null;
 			Object principal = authentication.getPrincipal();
 
 			if (principal instanceof CustomUserDetails) {
-				currentUserId = ((CustomUserDetails) principal).getUsername();
+				currentUserEmail = ((CustomUserDetails) principal).getUsername();
 			} else if (principal instanceof String) {
-				currentUserId = (String) principal;
+				currentUserEmail = (String) principal;
 			}
 
-			if (currentUserId != null) {
-				Optional<User> optionalUser = userRepository.findByUserid(currentUserId);
+			if (currentUserEmail != null) {
+				Optional<User> optionalUser = userRepository.findByEmail(currentUserEmail);
 				Optional<NewsArticle> optionalNewsArticle = newsArticleRepository.findById(new ObjectId(articleId));
 
 				if (optionalUser.isPresent() && optionalNewsArticle.isPresent()) {
@@ -100,9 +102,9 @@ public class NewsServiceImpl implements NewsService {
 								userNewsLogRepository.save(userNewsLog);
 							}
 					);
-					System.out.println(currentUserId + "의 조회 기록이 업데이트 되었습니다.");
+					System.out.println(currentUserEmail + "의 조회 기록이 업데이트 되었습니다.");
 				} else {
-					System.out.println("userId를 가져오는데 실패했습니다.");
+					System.out.println("email를 가져오는데 실패했습니다.");
 				}
 			}
 		}

@@ -1,21 +1,28 @@
 package com.sum_news_BE.domain;
 
-import lombok.Builder;
-import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-
 import java.time.LocalDateTime;
 
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
-@Builder
+@NoArgsConstructor
+@Document(collection = "user_setting")
 public class UserSetting {
 
-    private boolean tts_enabled;
+	@Id
+	private ObjectId id;
 
-    private String tts_voice;
+	@DBRef
+	private User user;
 
-    private LocalDateTime updated_at;
+	private boolean ttsEnabled;
+	private String ttsVoice;
 
-    @DBRef
-    private User user;
+	private LocalDateTime updatedAt;
 }

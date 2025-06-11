@@ -2,12 +2,14 @@ package com.sum_news_BE.repository;
 
 import java.util.Optional;
 
-import com.sum_news_BE.domain.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
-public interface UserRepository extends MongoRepository<User, Integer> {
+import com.sum_news_BE.domain.User;
 
-	Optional<User> findByUserid(String userid);
+@Repository
+public interface UserRepository extends MongoRepository<User, String> {
+	Optional<User> findByEmail(String email);
+	boolean existsByEmail(String email);
+	boolean existsByNickname(String nickname);
 }

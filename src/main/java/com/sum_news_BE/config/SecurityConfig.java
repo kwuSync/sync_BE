@@ -4,8 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HttpBasicConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -30,8 +29,10 @@ public class SecurityConfig {
 		"/api-docs/**",
 		"/api-docs/json/swagger-config",
 		"/api-docs/json",
-		"/user/signup",
+		"/user/join",
 		"/user/login",
+		"/mail/send",
+		"/mail/verify",
 		"/reissue"
 	};
 
@@ -41,8 +42,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests(request -> request
 				.requestMatchers(url).permitAll()
 				.anyRequest().authenticated())
-			.csrf(AbstractHttpConfigurer::disable)
-			.httpBasic(HttpBasicConfigurer::disable)
+			.csrf(csrf -> csrf.disable())
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();

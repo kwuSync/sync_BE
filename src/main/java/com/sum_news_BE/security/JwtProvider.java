@@ -5,6 +5,9 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import com.sum_news_BE.repository.RefreshTokenRepository;
@@ -14,7 +17,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -33,44 +38,46 @@ public class JwtProvider {
 	@Autowired
 	private RefreshTokenRepository refreshTokenRepository;
 
+	@Autowired
+	private CustomUserDetailsService userDetailsService;
+
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(secretKey.getBytes());
 	}
 
-	public String generateAccessToken(String userid) { //accessToken
-		System.out.println("AccessToken 생성: " + userid);
+	public String generateAccessToken(String email) {
+		log.info("AccessToken 생성: {}", email);
 		return Jwts.builder()
-			.setSubject(userid)
-			.setIssuedAt(new Date())
-			.setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-			.signWith(getSigningKey(), SignatureAlgorithm.HS256)
-			.compact();
-	}
-
-	public String generateRefreshToken(String userid) { //refreshToken
-		System.out.println("RefreshToken 생성 시도: " + userid);
-		try {
-			String token = Jwts.builder()
-				.setSubject(userid)
+				.setSubject(email)
 				.setIssuedAt(new Date())
-				.setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+				.setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
 				.signWith(getSigningKey(), SignatureAlgorithm.HS256)
 				.compact();
-			System.out.println("RefreshToken 생성 성공: " + token);
+	}
+
+	public String generateRefreshToken(String email) {
+		log.info("RefreshToken 생성 시도: {}", email);
+		try {
+			String token = Jwts.builder()
+					.setSubject(email)
+					.setIssuedAt(new Date())
+					.setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+					.signWith(getSigningKey(), SignatureAlgorithm.HS256)
+					.compact();
+			log.info("RefreshToken 생성 성공: {}", token);
 			return token;
 		} catch (Exception e) {
-			System.out.println("RefreshToken 생성 실패: " + e.getMessage());
-			e.printStackTrace();
+			log.error("RefreshToken 생성 실패: {}", e.getMessage());
 			throw e;
 		}
 	}
 
-	public String getUseridFromToken(String token) {
+	public String getEmailFromToken(String token) {
 		Claims claims = Jwts.parserBuilder()
-			.setSigningKey(getSigningKey())
-			.build()
-			.parseClaimsJws(token)
-			.getBody();
+				.setSigningKey(getSigningKey())
+				.build()
+				.parseClaimsJws(token)
+				.getBody();
 		return claims.getSubject();
 	}
 
@@ -82,12 +89,18 @@ public class JwtProvider {
 			}
 
 			Jwts.parserBuilder()
-				.setSigningKey(getSigningKey())
-				.build()
-				.parseClaimsJws(token);
+					.setSigningKey(getSigningKey())
+					.build()
+					.parseClaimsJws(token);
 			return true;
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	public Authentication getAuthentication(String token) {
+		String email = getEmailFromToken(token);
+		UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 	}
 }

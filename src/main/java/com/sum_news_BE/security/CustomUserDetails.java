@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.sum_news_BE.domain.User;
@@ -21,7 +22,7 @@ public class CustomUserDetails implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return Collections.singleton(() -> "ROLE_USER");
+		return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 	}
 
 	@Override
@@ -31,7 +32,7 @@ public class CustomUserDetails implements UserDetails {
 
 	@Override
 	public String getUsername() {  //userid 반환 (로그인에 사용할 유일한 값)
-		return user.getUserid();
+		return user.getEmail();
 	}
 
 	@Override

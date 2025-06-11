@@ -1,21 +1,22 @@
 package com.sum_news_BE.service.UserService;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.sum_news_BE.domain.User;
 import com.sum_news_BE.web.dto.UserRequestDTO;
 
 public interface UserService {
-    // 회원가입
-    User joinUser(UserRequestDTO.JoinDTO joinDTO);
-    
-    // 로그인
+
+    @Transactional
+    void join(UserRequestDTO.JoinDTO joinDTO);
+
     User login(UserRequestDTO.LoginDTO loginDTO);
-    
-    // 사용자 조회
-    User getUserById(String userid);
 
-    // 사용자 삭제
-    User delete(String userid);
+    User getUserByEmail(String email);
 
-    // 사용자 정보 수정
-    User update(UserRequestDTO.UpdateDTO updateDTO);
+    @Transactional
+    void delete(UserRequestDTO.DeleteDTO deleteDTO);
+
+    @Transactional
+    User update(String email, UserRequestDTO.UpdateDTO updateDTO);
 } 
