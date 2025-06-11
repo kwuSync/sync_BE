@@ -1,20 +1,25 @@
 package com.sum_news_BE.domain;
 
-import lombok.Builder;
-import lombok.Data;
+import java.time.LocalDateTime;
+
+import lombok.Setter;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@Document(collection = "userNewsLog")
+@NoArgsConstructor
+@Setter
+@Document(collection = "user_news_log")
 public class UserNewsLog {
 
     @Id
-    private Integer id;
+    private ObjectId id;
 
     @DBRef
     private User user;
@@ -22,7 +27,7 @@ public class UserNewsLog {
     @DBRef
     private NewsArticle article;
 
-    private boolean is_read;
+    private boolean isRead;
 
-    private LocalDateTime read_at;
+    private LocalDateTime readAt;
 }
