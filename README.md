@@ -1,5 +1,6 @@
 # Swagger API test
 현재는 devlop branch의 코드를 받고 로컬 환경에서 Swagger 실행 후 API 테스트 (회원가입, 로그인 외의 기능은 accessToken 입력 후 테스트 실시)
+코드 받아온 후 Notion의 Swagger 페이지에서 jwt.secret, mail.password 입력 필요
 
 # 커밋 컨벤션
 
