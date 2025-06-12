@@ -22,7 +22,7 @@ public class NewsSummary {
 
 	private String articleId;
 
-	private String summaryText;
+	private String summary;
 
 	private LocalDateTime generatedAt;
 

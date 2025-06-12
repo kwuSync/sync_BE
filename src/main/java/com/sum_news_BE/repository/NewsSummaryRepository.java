@@ -12,4 +12,6 @@ import java.util.Optional;
 @Repository
 public interface NewsSummaryRepository extends MongoRepository<NewsSummary, ObjectId> {
     Optional<NewsSummary> findByArticleId(String articleId);
+
+	List<NewsSummary> findByArticleIdIn(List<String> articleIds);
 }
