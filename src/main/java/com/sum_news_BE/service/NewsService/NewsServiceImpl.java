@@ -49,23 +49,22 @@ public class NewsServiceImpl implements NewsService {
 	@PostConstruct
 	public void init() {
 		try {
-			// JSON 파일 목록
-			List<String> jsonFiles = Arrays.asList("cluster_2_summary.json", "cluster_3_summary.json");
+			List<String> jsonFiles = Arrays.asList("cluster_0_summary.json", "cluster_1_summary.json", "cluster_2_summary.json", "cluster_3_summary.json", "cluster_4_summary.json");
 
 			for (String jsonFile : jsonFiles) {
-				// JSON 파일 읽기
 				Resource resource = new ClassPathResource(jsonFile);
 				String jsonContent = new String(resource.getInputStream().readAllBytes());
 				log.info("읽은 JSON 파일: {}, 내용: {}", jsonFile, jsonContent);
 
-				// JSON을 Map으로 파싱하여 원본 데이터 유지
 				Map<String, Object> jsonMap = objectMapper.readValue(jsonContent, Map.class);
 
-				// MongoDB에 저장
+				// summary 객체 전체를 문자열로 저장
+				String summaryJson = objectMapper.writeValueAsString(jsonMap.get("summary"));
+
 				NewsArticle newsArticle = NewsArticle.builder()
+					.title((String) jsonMap.get("generated_title"))
+					.summary(summaryJson)  // summary 객체 전체를 문자열로 저장
 					.clusterId(String.valueOf(jsonMap.get("cluster_id")))
-					.summary((String) jsonMap.get("summary"))
-					.title(String.join("|", (List<String>) jsonMap.get("titles")))
 					.publishedAt(LocalDateTime.parse((String) jsonMap.get("timestamp")))
 					.createdAt(LocalDateTime.now())
 					.build();
@@ -84,50 +83,80 @@ public class NewsServiceImpl implements NewsService {
 	@Override
 	public NewsResponseDTO.NewsListDTO getMain() {
 		try {
-			// JSON 파일 목록
-			List<String> jsonFiles = Arrays.asList("cluster_2_summary.json", "cluster_3_summary.json");
+			List<String> jsonFiles = Arrays.asList("cluster_0_summary.json", "cluster_1_summary.json", "cluster_2_summary.json", "cluster_3_summary.json", "cluster_4_summary.json");
 			List<NewsResponseDTO.NewsClusterDTO> newsClusters = new ArrayList<>();
+			log.info("Starting to process {} JSON files", jsonFiles.size());
 
 			for (String jsonFile : jsonFiles) {
-				// JSON 파일 읽기
+				log.info("Processing file: {}", jsonFile);
 				Resource resource = new ClassPathResource(jsonFile);
 				String jsonContent = new String(resource.getInputStream().readAllBytes());
-
-				// JSON을 Map으로 파싱
 				Map<String, Object> jsonMap = objectMapper.readValue(jsonContent, Map.class);
 
-				// MongoDB에서 해당 클러스터의 데이터 조회
 				String clusterId = String.valueOf(jsonMap.get("cluster_id"));
-				NewsArticle article = newsArticleRepository.findByClusterId(clusterId)
-					.orElse(null);
+				log.info("Found cluster_id: {}", clusterId);
+				
+				List<NewsArticle> articles = newsArticleRepository.findByClusterId(clusterId);
+				log.info("Found {} articles for cluster_id: {}", articles.size(), clusterId);
 
-				if (article != null) {
-					List<String> titles = Arrays.asList(article.getTitle().split("\\|"));
+				if (!articles.isEmpty()) {
+					NewsArticle firstArticle = articles.get(0);
+					log.info("Processing article with ID: {}", firstArticle.getId());
 
-					// ids를 Integer 리스트로 변환
-					List<Integer> ids = ((List<Number>) jsonMap.get("ids")).stream()
-						.map(Number::intValue)
-						.collect(Collectors.toList());
+					try {
+						// JSON 파일에서 직접 summary 정보 가져오기
+						@SuppressWarnings("unchecked")
+						Map<String, Object> summaryMap = (Map<String, Object>) jsonMap.get("summary");
+						log.info("Successfully got summary map from JSON");
+						
+						NewsResponseDTO.Summary summary = NewsResponseDTO.Summary.builder()
+							.highlight((String) summaryMap.get("highlight"))
+							.article((String) summaryMap.get("article"))
+							.background((String) summaryMap.get("background"))
+							.build();
 
-					NewsResponseDTO.NewsClusterDTO newsCluster = NewsResponseDTO.NewsClusterDTO.builder()
-						.clusterId(Integer.parseInt(clusterId))
-						.summary(article.getSummary())
-						.titles(titles)
-						.ids(ids)  // 변환된 Integer 리스트 사용
-						.timestamp(article.getPublishedAt())
-						.build();
+						@SuppressWarnings("unchecked")
+						List<String> keywords = (List<String>) jsonMap.get("generated_keywords");
 
-					newsClusters.add(newsCluster);
+						@SuppressWarnings("unchecked")
+						List<String> titles = (List<String>) jsonMap.get("titles");
+
+						@SuppressWarnings("unchecked")
+						List<Integer> ids = ((List<Number>) jsonMap.get("ids")).stream()
+							.map(Number::intValue)
+							.collect(Collectors.toList());
+
+						NewsResponseDTO.NewsClusterDTO newsCluster = NewsResponseDTO.NewsClusterDTO.builder()
+							.generated_title((String) jsonMap.get("generated_title"))
+							.generated_keywords(keywords)
+							.cluster_id(Integer.parseInt(clusterId))
+							.summary(summary)
+							.titles(titles)
+							.ids(ids)
+							.timestamp(firstArticle.getPublishedAt())
+							.build();
+
+						newsClusters.add(newsCluster);
+						log.info("Added news cluster to list. Current size: {}", newsClusters.size());
+					} catch (Exception e) {
+						log.error("Error processing article {}: {}", firstArticle.getId(), e.getMessage(), e);
+					}
+				} else {
+					log.warn("No articles found for cluster_id: {}", clusterId);
 				}
 			}
 
-			return NewsResponseDTO.NewsListDTO.builder()
+			log.info("Total news clusters found: {}", newsClusters.size());
+			NewsResponseDTO.NewsListDTO response = NewsResponseDTO.NewsListDTO.builder()
 				.newsClusters(newsClusters)
 				.build();
+			log.info("Created response with {} clusters", response.getNewsClusters() != null ? response.getNewsClusters().size() : 0);
+			return response;
 		} catch (IOException e) {
 			log.error("뉴스 데이터 조회 실패", e);
 		}
 
+		log.warn("Returning empty response due to error");
 		return NewsResponseDTO.NewsListDTO.builder().build();
 	}
 

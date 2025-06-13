@@ -8,9 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class NewsResponseDTO {
 
@@ -20,15 +18,24 @@ public class NewsResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class NewsClusterDTO {
-        private Integer clusterId;
-
-        private String summary;
-
+        private String generated_title;
+        private List<String> generated_keywords;
+        private Integer cluster_id;
+        private Summary summary;
         private List<String> titles;
-
         private List<Integer> ids;
-
         private LocalDateTime timestamp;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Summary {
+        private String highlight;
+        private String article;
+        private String background;
     }
 
     @Getter
