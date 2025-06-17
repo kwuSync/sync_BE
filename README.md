@@ -1,4 +1,4 @@
-# Teac Sync
+# Team Sync
 AI 기반 뉴스 요약 & TTS 웹 서비스 백엔드 레포지토리 입니다.
 
 ## Swagger API test
