@@ -18,9 +18,14 @@ public class MailVerificationService {
 	public boolean verifyAuthNumber(String email, int authNumber) {
 		Integer savedAuthNumber = emailAuthMap.get(email);
 		if (savedAuthNumber != null && savedAuthNumber == authNumber) {
-			emailAuthMap.remove(email);
+			// 인증 성공 후 삭제하지 않고 유지 (회원가입 완료 후 삭제)
 			return true;
 		}
 		return false;
+	}
+
+	// 회원가입 완료 후 인증번호 삭제
+	public void removeAuthNumber(String email) {
+		emailAuthMap.remove(email);
 	}
 }

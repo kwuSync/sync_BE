@@ -53,6 +53,9 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         userRepository.save(user);
+        
+        // 회원가입 완료 후 인증번호 삭제
+        mailVerificationService.removeAuthNumber(joinDTO.getEmail());
     }
 
     @Override
