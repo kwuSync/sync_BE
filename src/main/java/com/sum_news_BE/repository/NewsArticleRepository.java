@@ -12,4 +12,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NewsArticleRepository extends MongoRepository<NewsArticle, ObjectId> {
 	List<NewsArticle> findByClusterId(String clusterId);
+	List<NewsArticle> findAllByOrderByCreatedAtDesc();
 }

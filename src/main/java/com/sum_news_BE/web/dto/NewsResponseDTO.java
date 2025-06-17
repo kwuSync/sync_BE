@@ -44,9 +44,11 @@ public class NewsResponseDTO {
     public static class NewsArticleDTO {
         private String id;
         private String title;
-        private String summary;
+        private String summaryText;
         private String clusterId;
         private LocalDateTime timestamp;
+        private String source;
+        private LocalDateTime publishedAt;
     }
 
     @Getter
@@ -55,6 +57,6 @@ public class NewsResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class NewsListDTO {
-        private List<NewsClusterDTO> newsClusters;
+        private List<NewsArticleDTO> newsList;
     }
 }
