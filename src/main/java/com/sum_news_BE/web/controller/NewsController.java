@@ -26,10 +26,10 @@ public class NewsController {
 		return ApiResponse.ok("목록 조회가 완료되었습니다.", newsList);
 	}
 
-	@GetMapping("/{article_id}/summary")
-	@Operation(summary = "뉴스요약 조회 API", description = "기사 요약을 조회합니다.")
-	public ApiResponse<NewsSummaryResponseDTO> getNewsSummary(@PathVariable("article_id") String articleId) {
-		NewsSummaryResponseDTO summary = newsService.getNewsSummary(articleId);
-		return ApiResponse.ok("뉴스 요약 조회가 완료되었습니다.", summary);
+	@GetMapping("/cluster/{cluster_id}/summary")
+	@Operation(summary = "뉴스요약 조회 API", description = "클러스터 ID로 요약을 조회합니다.")
+	public ApiResponse<NewsResponseDTO.NewsClusterDTO> getNewsSummaryByClusterId(@PathVariable("cluster_id") String clusterId) {
+		NewsResponseDTO.NewsClusterDTO newsCluster = newsService.getNewsSummaryByClusterId(clusterId);
+		return ApiResponse.ok("뉴스 요약 조회가 완료되었습니다.", newsCluster);
 	}
 }

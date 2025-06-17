@@ -38,7 +38,9 @@ public class SecurityConfig {
 		"/user/login",
 		"/mail/send",
 		"/mail/verify",
-		"/reissue"
+		"/reissue",
+		"/main/news",
+		"/main/cluster/**"
 	};
 
 	@Bean
