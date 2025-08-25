@@ -3,6 +3,7 @@ package com.sum_news_BE.web.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sum_news_BE.domain.User;
 import com.sum_news_BE.service.UserService.UserService;
 import com.sum_news_BE.service.TokenService.TokenService;
-import com.sum_news_BE.web.dto.UserRequestDTO;
+import com.sum_news_BE.web.dto.userDTO.UserRequestDTO;
 import com.sum_news_BE.web.dto.TokenResponseDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +53,20 @@ public class UserController {
 		return ResponseEntity.ok(user);
 	}
 
+	@Operation(summary = "비밀번호 찾기", description = "이메일로 비밀번호 재설정 인증번호를 전송합니다.")
+	@PostMapping("/password/reset")
+	public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody UserRequestDTO.PasswordResetRequestDTO requestDTO) {
+		userService.requestPasswordReset(requestDTO);
+		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "비밀번호 재설정 확인", description = "인증번호 확인 후 새 비밀번호로 변경합니다.")
+	@PostMapping("/password/confirm")
+	public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody UserRequestDTO.PasswordResetConfirmDTO confirmDTO) {
+		userService.confirmPasswordReset(confirmDTO);
+		return ResponseEntity.ok().build();
+	}
+
 	@Operation(summary = "회원 탈퇴", description = "이메일과 비밀번호 확인 후 회원 탈퇴를 처리합니다.")
 	@DeleteMapping
 	public ResponseEntity<Void> delete(@Valid @RequestBody UserRequestDTO.DeleteDTO deleteDTO) {
@@ -60,15 +75,21 @@ public class UserController {
 	}
 
 	@Operation(summary = "회원 정보 수정", description = "이메일로 사용자를 찾아 정보를 수정합니다.")
-	@PutMapping
+	@PatchMapping
 	public ResponseEntity<User> update(String email, @Valid @RequestBody UserRequestDTO.UpdateDTO updateDTO) {
 		User updatedUser = userService.update(email, updateDTO);
 		return ResponseEntity.ok(updatedUser);
 	}
 
-	@Operation(summary = "로그아웃", description = "사용자의 리프레시 토큰을 삭제하여 로그아웃을 처리합니다.")
+	@Operation(summary = "로그아웃", description = "사용자의 리프레시 토큰을 삭제하고 accessToken을 블랙리스트에 추가하여 로그아웃을 처리합니다.")
 	@PostMapping("/logout")
-	public ResponseEntity<Void> logout(@RequestHeader("Authorization") String refreshToken) {
+	public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
+		// "Bearer " 제거하고 토큰만 추출
+		String refreshToken = authorization;
+		if (authorization.startsWith("Bearer ")) {
+			refreshToken = authorization.substring(7);
+		}
+		
 		tokenService.logout(refreshToken);
 		return ResponseEntity.ok().build();
 	}

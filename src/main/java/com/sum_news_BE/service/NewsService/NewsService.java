@@ -1,9 +1,6 @@
 package com.sum_news_BE.service.NewsService;
 
-import com.sum_news_BE.web.dto.NewsResponseDTO;
-import com.sum_news_BE.web.dto.NewsSummaryResponseDTO;
-
-import java.util.List;
+import com.sum_news_BE.web.dto.newsDTO.NewsResponseDTO;
 
 public interface NewsService {
 	// 메인 화면 뉴스 목록 조회

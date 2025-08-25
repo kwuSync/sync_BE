@@ -36,11 +36,11 @@ public class SecurityConfig {
 		"/api-docs/json",
 		"/user/join",
 		"/user/login",
+		"/user/password/reset",
+		"/user/password/confirm",
 		"/mail/send",
 		"/mail/verify",
-		"/reissue",
-		"/main/news",
-		"/main/cluster/**"
+		"/reissue"
 	};
 
 	@Bean
@@ -61,7 +61,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 		
