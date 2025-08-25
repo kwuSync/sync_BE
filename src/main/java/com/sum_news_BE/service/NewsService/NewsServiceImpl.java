@@ -2,7 +2,6 @@ package com.sum_news_BE.service.NewsService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +26,8 @@ import com.sum_news_BE.domain.NewsArticle;
 import com.sum_news_BE.domain.NewsSummary;
 import com.sum_news_BE.repository.NewsArticleRepository;
 import com.sum_news_BE.repository.NewsSummaryRepository;
-import com.sum_news_BE.web.dto.NewsResponseDTO;
-import com.sum_news_BE.web.dto.NewsSummaryResponseDTO;
+import com.sum_news_BE.web.dto.newsDTO.NewsResponseDTO;
+import com.sum_news_BE.web.dto.newsDTO.NewsSummaryResponseDTO;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -184,10 +183,10 @@ public class NewsServiceImpl implements NewsService {
 				.map(Number::intValue)
 				.collect(Collectors.toList());
 
-			// timestamp는 JSON에서 직접 가져옵니다
+			// timestamp는 JSON에서 직접 가져옴
 			LocalDateTime timestamp = LocalDateTime.parse((String) jsonMap.get("timestamp"));
 
-			// NewsResponseDTO.NewsClusterDTO를 빌드하여 반환합니다.
+			// NewsResponseDTO.NewsClusterDTO를 빌드하여 반환
 			NewsResponseDTO.NewsClusterDTO newsClusterDTO = NewsResponseDTO.NewsClusterDTO.builder()
 				.generated_title((String) jsonMap.get("generated_title"))
 				.generated_keywords(keywords)
@@ -216,7 +215,7 @@ public class NewsServiceImpl implements NewsService {
 	public NewsResponseDTO.NewsClusterDTO getNewsSummary(String articleId) {
 		try {
 			log.info("##### 뉴스 상세 조회 요청 시작: articleId={} #####", articleId);
-			// 기사 ID로 NewsArticle을 찾습니다. clusterId를 얻기 위함입니다.
+			// 기사 ID로 NewsArticle을 찾기
 			NewsArticle article = newsArticleRepository.findById(new ObjectId(articleId))
 					.orElseThrow(() -> new IllegalArgumentException("기사를 찾을 수 없습니다."));
 			log.info("NewsArticle 조회 성공: ID={}, Title=\"{}\", ClusterId={}", article.getId(), article.getTitle(), article.getClusterId());

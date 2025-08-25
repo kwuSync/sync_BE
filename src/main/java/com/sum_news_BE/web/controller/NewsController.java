@@ -2,10 +2,9 @@ package com.sum_news_BE.web.controller;
 
 
 import com.sum_news_BE.api.ApiResponse;
-import com.sum_news_BE.domain.NewsSummary;
 import com.sum_news_BE.service.NewsService.NewsService;
-import com.sum_news_BE.web.dto.NewsResponseDTO;
-import com.sum_news_BE.web.dto.NewsSummaryResponseDTO;
+import com.sum_news_BE.web.dto.newsDTO.NewsResponseDTO;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
