@@ -1,4 +1,4 @@
-package com.sum_news_BE.web.dto;
+package com.sum_news_BE.web.dto.newsDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.sum_news_BE.web.dto;
+package com.sum_news_BE.web.dto.newsDTO;
 
 import java.time.LocalDateTime;
 
