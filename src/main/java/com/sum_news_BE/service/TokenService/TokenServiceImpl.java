@@ -1,5 +1,7 @@
 package com.sum_news_BE.service.TokenService;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class TokenServiceImpl implements TokenService {
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UserRepository userRepository;
+	private final RedisTokenBlacklistService redisTokenBlacklistService;
 
 	@Override
 	public TokenResponseDTO generateToken(String email) {
@@ -105,7 +108,14 @@ public class TokenServiceImpl implements TokenService {
 		}
 
 		String email = jwtProvider.getEmailFromToken(refreshToken);
+		
+		// refreshToken 삭제
 		deleteRefreshToken(email);
-		log.info("로그아웃 완료: {}", email);
+		
+		// refreshToken을 accessToken으로 간주하여 블랙리스트에 추가
+		// (실제로는 사용자별 accessToken 추적이 필요하지만, 여기서는 간단하게 처리)
+		redisTokenBlacklistService.blacklistToken(refreshToken);
+		
+		log.info("로그아웃 완료: {} (토큰 블랙리스트 추가)", email);
 	}
 }
