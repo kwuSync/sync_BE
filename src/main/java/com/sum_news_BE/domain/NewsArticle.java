@@ -37,5 +37,5 @@ public class NewsArticle {
 	private String source;
 
 	@DBRef
-	private List<NewsComment> comments;
+	private List<Comment> comments;
 }

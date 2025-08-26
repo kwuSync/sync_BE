@@ -1,6 +1,5 @@
 package com.sum_news_BE.web.dto.newsDTO;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,9 +17,9 @@ public class NewsResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class NewsClusterDTO {
-        private String generated_title;
-        private List<String> generated_keywords;
-        private Integer cluster_id;
+        private String generatedTitle;
+        private List<String> generatedKeywords;
+        private String clusterId;
         private Summary summary;
         private List<String> titles;
         private List<Integer> ids;

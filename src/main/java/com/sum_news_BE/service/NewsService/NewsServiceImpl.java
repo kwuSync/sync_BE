@@ -65,7 +65,7 @@ public class NewsServiceImpl implements NewsService {
 
 				@SuppressWarnings("unchecked")
 				Map<String, String> summaryMapFromJson = (Map<String, String>) jsonMap.get("summary");
-				
+
 				String generatedTitle = (String) jsonMap.get("generated_title");
 				String clusterIdJson = String.valueOf(jsonMap.get("cluster_id"));
 				LocalDateTime timestampJson = LocalDateTime.parse((String) jsonMap.get("timestamp"));
@@ -73,32 +73,29 @@ public class NewsServiceImpl implements NewsService {
 				String highlightSummaryContent = summaryMapFromJson.get("highlight");
 
 				NewsArticle newsArticle = NewsArticle.builder()
-					.title(generatedTitle)
-					.summary(articleSummaryContent)
-					.clusterId(clusterIdJson)
-					.publishedAt(timestampJson)
-					.createdAt(LocalDateTime.now())
-					.source(null) // JSON에 source 필드가 없으므로 일단 null로 설정
-					.build();
+						.title(generatedTitle)
+						.summary(articleSummaryContent)
+						.clusterId(clusterIdJson)
+						.publishedAt(timestampJson)
+						.createdAt(LocalDateTime.now())
+						.source(null)
+						.build();
 
 				NewsArticle savedArticle = newsArticleRepository.save(newsArticle);
-				log.info("저장된 NewsArticle 확인: ID={}, Title=\"{}\", ClusterId={}, PublishedAt={}, Summary (짧게)=\"{}\", Source={}", 
-					savedArticle.getId(), savedArticle.getTitle(), savedArticle.getClusterId(), savedArticle.getPublishedAt(), 
-					savedArticle.getSummary() != null ? savedArticle.getSummary().substring(0, Math.min(savedArticle.getSummary().length(), 50)) + "..." : "null",
-					savedArticle.getSource());
+				log.info("저장된 NewsArticle 확인: ID={}, Title=\"{}\", ClusterId={}, PublishedAt={}, Summary (짧게)=\"{}\", Source={}",
+						savedArticle.getId(), savedArticle.getTitle(), savedArticle.getClusterId(), savedArticle.getPublishedAt(),
+						savedArticle.getSummary() != null ? savedArticle.getSummary().substring(0, Math.min(savedArticle.getSummary().length(), 50)) + "..." : "null",
+						savedArticle.getSource());
 
-				// NewsSummary 생성 및 저장 (highlight를 summaryText로 사용)
 				NewsSummary newsSummary = NewsSummary.builder()
-					.articleId(savedArticle.getId().toString())
-					.summaryText(highlightSummaryContent)
-					.generatedAt(timestampJson)
-					.article(savedArticle) // NewsSummary와 NewsArticle 연결
-					.build();
+						.summaryText(highlightSummaryContent)
+						.generatedAt(timestampJson)
+						.article(savedArticle)
+						.build();
 				newsSummaryRepository.save(newsSummary);
-				log.info("저장된 NewsSummary 확인: ID={}, ArticleId={}, SummaryText (짧게)=\"{}\", GeneratedAt={}", 
-					newsSummary.getId(), newsSummary.getArticleId(), 
-					newsSummary.getSummaryText() != null ? newsSummary.getSummaryText().substring(0, Math.min(newsSummary.getSummaryText().length(), 50)) + "..." : "null", 
-					newsSummary.getGeneratedAt());
+				log.info("저장된 NewsSummary 확인: ID={}, ArticleId={}, SummaryText (짧게)=\"{}\", GeneratedAt={}",
+						newsSummary.getSummaryText() != null ? newsSummary.getSummaryText().substring(0, Math.min(newsSummary.getSummaryText().length(), 50)) + "..." : "null",
+						newsSummary.getGeneratedAt());
 			}
 
 			log.info("===== 뉴스 데이터 초기화 완료. =====");
@@ -119,10 +116,10 @@ public class NewsServiceImpl implements NewsService {
 
 		List<NewsResponseDTO.NewsArticleDTO> newsArticleDTO = sortNews.stream()
 				.map(article -> {
-					log.info("--- NewsArticle 매핑 중: ID={}, Title=\"{}\", ClusterId={}, PublishedAt={}, Source={}", 
-						article.getId(), article.getTitle(), article.getClusterId(), article.getPublishedAt(), article.getSource());
+					log.info("--- NewsArticle 매핑 중: ID={}, Title=\"{}\", ClusterId={}, PublishedAt={}, Source={}",
+							article.getId(), article.getTitle(), article.getClusterId(), article.getPublishedAt(), article.getSource());
 
-					String summaryText = newsSummaryRepository.findByArticleId(article.getId().toString())
+					String summaryText = newsSummaryRepository.findByArticle(article)
 							.map(NewsSummary::getSummaryText)
 							.orElseGet(() -> {
 								log.warn("NewsSummary를 찾을 수 없음 (articleId: {}). '요약 없음' 반환.", article.getId());
@@ -140,7 +137,7 @@ public class NewsServiceImpl implements NewsService {
 							.publishedAt(article.getPublishedAt())
 							.build();
 				}).collect(Collectors.toList());
-		
+
 		log.info("##### NewsListDTO 생성 완료. 총 {}개의 기사 DTO. #####", newsArticleDTO.size());
 		return NewsResponseDTO.NewsListDTO.builder()
 				.newsList(newsArticleDTO)
@@ -151,7 +148,7 @@ public class NewsServiceImpl implements NewsService {
 	public NewsResponseDTO.NewsClusterDTO getNewsSummaryByClusterId(String clusterId) {
 		try {
 			log.info("##### 클러스터 ID로 뉴스 상세 조회 요청 시작: clusterId={} #####", clusterId);
-			
+
 			String jsonFile = "cluster_" + clusterId + "_summary.json";
 			log.info("관련 JSON 파일 경로: {}", jsonFile);
 
@@ -165,38 +162,36 @@ public class NewsServiceImpl implements NewsService {
 			Map<String, Object> summaryMap = (Map<String, Object>) jsonMap.get("summary");
 
 			NewsResponseDTO.Summary summary = NewsResponseDTO.Summary.builder()
-				.highlight((String) summaryMap.get("highlight"))
-				.article((String) summaryMap.get("article"))
-				.background((String) summaryMap.get("background"))
-				.build();
-			log.info("Summary DTO 생성 완료: Highlight={}, Article={}, Background={}", 
-				summary.getHighlight(), summary.getArticle(), summary.getBackground());
+					.highlight((String) summaryMap.get("highlight"))
+					.article((String) summaryMap.get("article"))
+					.background((String) summaryMap.get("background"))
+					.build();
+			log.info("Summary DTO 생성 완료: Highlight={}, Article={}, Background={}",
+					summary.getHighlight(), summary.getArticle(), summary.getBackground());
 
 			@SuppressWarnings("unchecked")
 			List<String> keywords = (List<String>) jsonMap.get("generated_keywords");
 
 			@SuppressWarnings("unchecked")
 			List<String> titles = (List<String>) jsonMap.get("titles");
-			
+
 			@SuppressWarnings("unchecked")
 			List<Integer> ids = ((List<Number>) jsonMap.get("ids")).stream()
-				.map(Number::intValue)
-				.collect(Collectors.toList());
+					.map(Number::intValue)
+					.collect(Collectors.toList());
 
-			// timestamp는 JSON에서 직접 가져옴
 			LocalDateTime timestamp = LocalDateTime.parse((String) jsonMap.get("timestamp"));
 
-			// NewsResponseDTO.NewsClusterDTO를 빌드하여 반환
 			NewsResponseDTO.NewsClusterDTO newsClusterDTO = NewsResponseDTO.NewsClusterDTO.builder()
-				.generated_title((String) jsonMap.get("generated_title"))
-				.generated_keywords(keywords)
-				.cluster_id(Integer.parseInt(clusterId))
-				.summary(summary)
-				.titles(titles)
-				.ids(ids)
-				.timestamp(timestamp) 
-				.build();
-			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####", newsClusterDTO.getGenerated_title(), newsClusterDTO.getCluster_id());
+					.generatedTitle((String) jsonMap.get("generated_title"))
+					.generatedKeywords(keywords)
+					.clusterId(clusterId)
+					.summary(summary)
+					.titles(titles)
+					.ids(ids)
+					.timestamp(timestamp)
+					.build();
+			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####", newsClusterDTO.getGeneratedTitle(), newsClusterDTO.getClusterId());
 			return newsClusterDTO;
 
 		} catch (IOException e) {
@@ -215,7 +210,6 @@ public class NewsServiceImpl implements NewsService {
 	public NewsResponseDTO.NewsClusterDTO getNewsSummary(String articleId) {
 		try {
 			log.info("##### 뉴스 상세 조회 요청 시작: articleId={} #####", articleId);
-			// 기사 ID로 NewsArticle을 찾기
 			NewsArticle article = newsArticleRepository.findById(new ObjectId(articleId))
 					.orElseThrow(() -> new IllegalArgumentException("기사를 찾을 수 없습니다."));
 			log.info("NewsArticle 조회 성공: ID={}, Title=\"{}\", ClusterId={}", article.getId(), article.getTitle(), article.getClusterId());
@@ -238,31 +232,30 @@ public class NewsServiceImpl implements NewsService {
 					.article((String) summaryMap.get("article"))
 					.background((String) summaryMap.get("background"))
 					.build();
-			log.info("Summary DTO 생성 완료: Highlight={}, Article={}, Background={}", 
-				summary.getHighlight(), summary.getArticle(), summary.getBackground());
+			log.info("Summary DTO 생성 완료: Highlight={}, Article={}, Background={}",
+					summary.getHighlight(), summary.getArticle(), summary.getBackground());
 
 			@SuppressWarnings("unchecked")
 			List<String> keywords = (List<String>) jsonMap.get("generated_keywords");
 
 			@SuppressWarnings("unchecked")
 			List<String> titles = (List<String>) jsonMap.get("titles");
-			
+
 			@SuppressWarnings("unchecked")
 			List<Integer> ids = ((List<Number>) jsonMap.get("ids")).stream()
 					.map(Number::intValue)
 					.collect(Collectors.toList());
 
-			// NewsResponseDTO.NewsClusterDTO를 빌드하여 반환합니다.
 			NewsResponseDTO.NewsClusterDTO newsClusterDTO = NewsResponseDTO.NewsClusterDTO.builder()
-					.generated_title((String) jsonMap.get("generated_title"))
-					.generated_keywords(keywords)
-					.cluster_id(Integer.parseInt(clusterId))
+					.generatedTitle((String) jsonMap.get("generated_title"))
+					.generatedKeywords(keywords)
+					.clusterId(clusterId)
 					.summary(summary)
 					.titles(titles)
 					.ids(ids)
-					.timestamp(article.getPublishedAt()) 
+					.timestamp(article.getPublishedAt())
 					.build();
-			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####", newsClusterDTO.getGenerated_title(), newsClusterDTO.getCluster_id());
+			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####", newsClusterDTO.getGeneratedTitle(), newsClusterDTO.getClusterId());
 			return newsClusterDTO;
 
 		} catch (IOException e) {
@@ -278,8 +271,8 @@ public class NewsServiceImpl implements NewsService {
 	}
 
 	@Transactional
-	public NewsSummaryResponseDTO getNewsSummaryForUserLog(String articleId) {
-		NewsSummary summary = newsSummaryRepository.findByArticleId(articleId)
+	public NewsSummaryResponseDTO getNewsSummaryForUserLog(NewsArticle article) {
+		NewsSummary summary = newsSummaryRepository.findByArticle(article)
 				.orElseThrow(() -> new IllegalArgumentException("기사의 요약 정보가 없습니다."));
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -298,25 +291,24 @@ public class NewsServiceImpl implements NewsService {
 
 			if (currentUserEmail != null) {
 				Optional<User> optionalUser = userRepository.findByEmail(currentUserEmail);
-				Optional<NewsArticle> optionalNewsArticle = newsArticleRepository.findById(new ObjectId(articleId));
 
-				if (optionalUser.isPresent() && optionalNewsArticle.isPresent()) {
+				if (optionalUser.isPresent()) {
 					User currentUser = optionalUser.get();
-					NewsArticle currentArticle = optionalNewsArticle.get();
+					NewsArticle currentArticle = article;
 
 					Optional<UserNewsLog> optionalUserNewsLog = userNewsLogRepository.findByUserAndArticle(currentUser, currentArticle);
 					optionalUserNewsLog.ifPresentOrElse(
-						log -> {
-							log.setRead(true);
-							log.setReadAt(LocalDateTime.now());
-						}, () -> {
-							UserNewsLog userNewsLog = new UserNewsLog();
-							userNewsLog.setUser(currentUser);
-							userNewsLog.setArticle(currentArticle);
-							userNewsLog.setRead(true);
-							userNewsLog.setReadAt(LocalDateTime.now());
-							userNewsLogRepository.save(userNewsLog);
-						}
+							log -> {
+								log.setRead(true);
+								log.setReadAt(LocalDateTime.now());
+							}, () -> {
+								UserNewsLog userNewsLog = new UserNewsLog();
+								userNewsLog.setUser(currentUser);
+								userNewsLog.setArticle(currentArticle);
+								userNewsLog.setRead(true);
+								userNewsLog.setReadAt(LocalDateTime.now());
+								userNewsLogRepository.save(userNewsLog);
+							}
 					);
 					System.out.println(currentUserEmail + "의 조회 기록이 업데이트 되었습니다.");
 				} else {
@@ -326,7 +318,6 @@ public class NewsServiceImpl implements NewsService {
 		}
 
 		return NewsSummaryResponseDTO.builder()
-				.articleId(summary.getArticleId())
 				.summary(summary.getSummaryText())
 				.generatedAt(summary.getGeneratedAt())
 				.build();

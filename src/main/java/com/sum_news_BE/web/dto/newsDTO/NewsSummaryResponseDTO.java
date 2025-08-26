@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class NewsSummaryResponseDTO {
-	private String articleId;
+	private String clusterId;
 	private String summary;
 	private LocalDateTime generatedAt;
 }
