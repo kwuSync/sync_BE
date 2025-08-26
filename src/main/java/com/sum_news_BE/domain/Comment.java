@@ -10,24 +10,27 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "news_comment")
-public class NewsComment {
+public class Comment {
 
 	@Id
 	private ObjectId id;
 
-	@DBRef
-	private NewsArticle article;
+	private String clusterId;
 
 	@DBRef
 	private User user;
 
-	private String comment_text;
+	private String commentText;
 
-	private LocalDateTime created_at;
+	private LocalDateTime createdAt;
 
-	private LocalDateTime updated_at;
+	private LocalDateTime updatedAt;
 }
