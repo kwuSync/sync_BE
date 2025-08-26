@@ -23,8 +23,6 @@ public class NewsSummary {
 	@Id
 	private ObjectId id;
 
-	private String articleId;
-
 	private String summaryText;
 
 	private LocalDateTime generatedAt;
