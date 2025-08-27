@@ -26,22 +26,18 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void join(UserRequestDTO.JoinDTO joinDTO) {
-        // 비밀번호 확인
         if (!joinDTO.getPassword().equals(joinDTO.getPasswordConfirm())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // 이메일 인증 확인
         if (!mailVerificationService.verifyAuthNumber(joinDTO.getEmail(), joinDTO.getAuthNumber())) {
             throw new IllegalArgumentException("이메일 인증이 필요합니다.");
         }
 
-        // 이메일 중복 확인
         if (userRepository.existsByEmail(joinDTO.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
-        // 닉네임 중복 확인
         if (userRepository.existsByNickname(joinDTO.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
@@ -55,45 +51,37 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         userRepository.save(user);
-        
-        // 회원가입 완료 후 인증번호 삭제
+
         mailVerificationService.removeAuthNumber(joinDTO.getEmail());
     }
 
     @Override
     @Transactional
     public void requestPasswordReset(UserRequestDTO.PasswordResetRequestDTO requestDTO) {
-        // 사용자 존재 여부 확인
         if (!userRepository.existsByEmail(requestDTO.getEmail())) {
             throw new IllegalArgumentException("존재하지 않는 이메일입니다.");
         }
-        
-        // 비밀번호 재설정용 이메일 전송
+
         mailService.sendPasswordResetMail(requestDTO.getEmail());
     }
 
     @Override
     @Transactional
     public void confirmPasswordReset(UserRequestDTO.PasswordResetConfirmDTO confirmDTO) {
-        // 비밀번호 확인
         if (!confirmDTO.getNewPassword().equals(confirmDTO.getNewPasswordConfirm())) {
             throw new IllegalArgumentException("새 비밀번호가 일치하지 않습니다.");
         }
 
-        // 이메일 인증번호 확인
         if (!mailVerificationService.verifyAuthNumber(confirmDTO.getEmail(), confirmDTO.getAuthNumber())) {
             throw new IllegalArgumentException("이메일 인증이 필요합니다.");
         }
 
-        // 사용자 조회
         User user = userRepository.findByEmail(confirmDTO.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 비밀번호 변경
         user.updatePassword(passwordEncoder.encode(confirmDTO.getNewPassword()));
         userRepository.save(user);
-        
-        // 인증번호 삭제
+
         mailVerificationService.removeAuthNumber(confirmDTO.getEmail());
     }
 
@@ -136,13 +124,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 닉네임 변경 시 중복 확인
         if (!user.getNickname().equals(updateDTO.getNickname()) && 
             userRepository.existsByNickname(updateDTO.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        // 비밀번호 변경 시 확인
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isEmpty()) {
             if (!updateDTO.getPassword().equals(updateDTO.getPasswordConfirm())) {
                 throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");

@@ -1,5 +1,7 @@
 package com.sum_news_BE.service.CommentService;
 
+import com.sum_news_BE.api.exception.AuthorizationException;
+import com.sum_news_BE.api.exception.ResourceNotFoundException;
 import com.sum_news_BE.domain.Comment;
 import com.sum_news_BE.domain.User;
 import com.sum_news_BE.repository.NewsArticleRepository;
@@ -23,8 +25,6 @@ import java.util.stream.Collectors;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final NewsArticleRepository articleRepository;
-    private final NewsSummaryRepository summaryRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -89,17 +89,17 @@ public class CommentServiceImpl implements CommentService {
 
     private User findUserById(ObjectId userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("USER_NOT_FOUND:사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
     private Comment findCommentById(String commentId) {
         return commentRepository.findById(new ObjectId(commentId))
-                .orElseThrow(() -> new RuntimeException("COMMENT_NOT_FOUND:댓글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
     }
 
     private void validateCommentOwnership(Comment comment, ObjectId userId) {
         if (!comment.getUser().getId().equals(userId)) {
-            throw new RuntimeException("COMMENT_ACCESS_DENIED:댓글을 수정/삭제할 권한이 없습니다.");
+            throw new AuthorizationException("댓글을 수정/삭제할 권한이 없습니다.");
         }
     }
 
