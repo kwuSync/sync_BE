@@ -13,8 +13,7 @@ public class RedisConfig {
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
-        // 키와 값 모두 String으로 직렬화
+
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
