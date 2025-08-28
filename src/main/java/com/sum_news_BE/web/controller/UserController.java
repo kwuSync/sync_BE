@@ -1,11 +1,9 @@
 package com.sum_news_BE.web.controller;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -23,7 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "User", description = "사용자 관련 API")
+@Tag(name = "user", description = "사용자 관련 API")
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -85,11 +83,7 @@ public class UserController {
 	@Operation(summary = "로그아웃", description = "사용자의 리프레시 토큰을 삭제하고 accessToken을 블랙리스트에 추가하여 로그아웃을 처리합니다.")
 	@PostMapping("/logout")
 	public ApiResponse<Void> logout(@RequestHeader("Authorization") String authorization) {
-		String refreshToken = authorization;
-		if (authorization.startsWith("Bearer ")) {
-			refreshToken = authorization.substring(7);
-		}
-		
+		String refreshToken = tokenService.resolveToken(authorization);
 		tokenService.logout(refreshToken);
 		return ApiResponse.ok("로그아웃 되었습니다.", null);
 	}
