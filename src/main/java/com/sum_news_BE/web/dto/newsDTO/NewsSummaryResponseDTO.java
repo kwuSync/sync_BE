@@ -1,4 +1,4 @@
-package com.sum_news_BE.web.dto;
+package com.sum_news_BE.web.dto.newsDTO;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class NewsSummaryResponseDTO {
-	private String articleId;
-	private String summaryText;
+	private String clusterId;
+	private String summary;
 	private LocalDateTime generatedAt;
 }
