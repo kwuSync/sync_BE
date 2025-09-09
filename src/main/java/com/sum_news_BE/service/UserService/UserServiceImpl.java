@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sum_news_BE.api.exception.ResourceNotFoundException;
 import com.sum_news_BE.domain.User;
 import com.sum_news_BE.repository.UserRepository;
 import com.sum_news_BE.service.MailService.MailService;
@@ -29,15 +30,12 @@ public class UserServiceImpl implements UserService {
         if (!joinDTO.getPassword().equals(joinDTO.getPasswordConfirm())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-
         if (!mailVerificationService.verifyAuthNumber(joinDTO.getEmail(), joinDTO.getAuthNumber())) {
             throw new IllegalArgumentException("이메일 인증이 필요합니다.");
         }
-
         if (userRepository.existsByEmail(joinDTO.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
-
         if (userRepository.existsByNickname(joinDTO.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
@@ -61,7 +59,6 @@ public class UserServiceImpl implements UserService {
         if (!userRepository.existsByEmail(requestDTO.getEmail())) {
             throw new IllegalArgumentException("존재하지 않는 이메일입니다.");
         }
-
         mailService.sendPasswordResetMail(requestDTO.getEmail());
     }
 
@@ -71,13 +68,11 @@ public class UserServiceImpl implements UserService {
         if (!confirmDTO.getNewPassword().equals(confirmDTO.getNewPasswordConfirm())) {
             throw new IllegalArgumentException("새 비밀번호가 일치하지 않습니다.");
         }
-
         if (!mailVerificationService.verifyAuthNumber(confirmDTO.getEmail(), confirmDTO.getAuthNumber())) {
             throw new IllegalArgumentException("이메일 인증이 필요합니다.");
         }
 
-        User user = userRepository.findByEmail(confirmDTO.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = findUserByEmail(confirmDTO.getEmail());
 
         user.updatePassword(passwordEncoder.encode(confirmDTO.getNewPassword()));
         userRepository.save(user);
@@ -88,46 +83,45 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User login(UserRequestDTO.LoginDTO loginDTO) {
-        User user = userRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
-
+        User user = findUserByEmail(loginDTO.getEmail());
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-
         return user;
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true) // readOnly 추가
     public User getUserByEmail(String email) {
+        return findUserByEmail(email);
+    }
+
+    private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+            .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
     }
 
     @Override
     @Transactional
     public void delete(UserRequestDTO.DeleteDTO deleteDTO) {
-        User user = userRepository.findByEmail(deleteDTO.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = findUserByEmail(deleteDTO.getEmail());
 
         if (!passwordEncoder.matches(deleteDTO.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-
         userRepository.delete(user);
     }
 
     @Override
     @Transactional
     public User update(String email, UserRequestDTO.UpdateDTO updateDTO) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = findUserByEmail(email);
 
-        if (!user.getNickname().equals(updateDTO.getNickname()) && 
+        if (!user.getNickname().equals(updateDTO.getNickname()) &&
             userRepository.existsByNickname(updateDTO.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
+        user.updateNickname(updateDTO.getNickname());
 
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isEmpty()) {
             if (!updateDTO.getPassword().equals(updateDTO.getPasswordConfirm())) {
@@ -136,7 +130,6 @@ public class UserServiceImpl implements UserService {
             user.updatePassword(passwordEncoder.encode(updateDTO.getPassword()));
         }
 
-        user.updateNickname(updateDTO.getNickname());
         return userRepository.save(user);
     }
 
