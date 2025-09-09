@@ -30,20 +30,12 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error("400", e.getMessage()));
     }
 
-    @ExceptionHandler(AuthorizationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthorizationException(AuthorizationException e) {
-        log.error("AuthorizationException: ", e);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException e) {
+        log.error("RuntimeException: ", e);
         return ResponseEntity
-            .status(HttpStatus.FORBIDDEN)
-            .body(ApiResponse.error("403", e.getMessage()));
-    }
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException e) {
-        log.error("ResourceNotFoundException: ", e);
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error("404", e.getMessage()));
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ApiResponse.error("500", e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
