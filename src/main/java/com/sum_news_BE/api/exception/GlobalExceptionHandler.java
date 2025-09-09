@@ -33,47 +33,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException e) {
         log.error("RuntimeException: ", e);
-        
-        String message = e.getMessage();
-        String[] parts = message.split(":", 2);
-        
-        if (parts.length == 2) {
-            String code = parts[0];
-            String detailMessage = parts[1];
-            
-            switch (code) {
-                case "COMMENT_NOT_FOUND":
-                case "ARTICLE_NOT_FOUND":
-                case "CLUSTER_NOT_FOUND":
-                case "USER_NOT_FOUND":
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error("404", detailMessage));
-                        
-                case "COMMENT_ACCESS_DENIED":
-                case "ARTICLE_ACCESS_DENIED":
-                case "CLUSTER_ACCESS_DENIED":
-                case "USER_ACCESS_DENIED":
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse.error("403", detailMessage));
-                        
-                case "INVALID_COMMENT":
-                case "INVALID_ARTICLE":
-                case "INVALID_CLUSTER":
-                case "INVALID_USER":
-                case "INVALID_TOKEN":
-                case "MISSING_HEADER":
-                case "INVALID_FORMAT":
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("400", detailMessage));
-                        
-                default:
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(ApiResponse.error("500", detailMessage));
-            }
-        }
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.error("500", message));
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ApiResponse.error("500", e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
