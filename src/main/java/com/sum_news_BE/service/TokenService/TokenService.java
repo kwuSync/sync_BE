@@ -9,8 +9,6 @@ public interface TokenService {
 	// 토큰 재발급
 	TokenResponseDTO reissueToken(String refreshToken);
 
-	String resolveToken(String bearerToken);
-
 	// 리프레시 토큰 저장
 	void saveRefreshToken(String email, String refreshToken);
 
