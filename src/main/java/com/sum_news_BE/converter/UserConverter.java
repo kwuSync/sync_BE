@@ -3,7 +3,7 @@ package com.sum_news_BE.converter;
 import java.time.LocalDateTime;
 
 import com.sum_news_BE.domain.User;
-import com.sum_news_BE.web.dto.UserRequestDTO;
+import com.sum_news_BE.web.dto.userDTO.UserRequestDTO;
 
 public class UserConverter {
 

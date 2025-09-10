@@ -3,6 +3,8 @@ package com.sum_news_BE.security;
 import java.security.Key;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,11 +19,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Component
 public class JwtProvider {
+
+	private static final Logger log = LoggerFactory.getLogger(JwtProvider.class);
 
 	@Value("${jwt.secret}")
 	private String secretKey;
@@ -73,12 +75,14 @@ public class JwtProvider {
 	}
 
 	public String getEmailFromToken(String token) {
+		log.info("Attempting to parse token: '[{}]'", token);
+
 		Claims claims = Jwts.parserBuilder()
 				.setSigningKey(getSigningKey())
 				.build()
 				.parseClaimsJws(token)
 				.getBody();
-		return claims.getSubject();
+		return claims.getSubject(); // subject에서 이메일 추출
 	}
 
 	public boolean validateToken(String token) {

@@ -1,5 +1,7 @@
 package com.sum_news_BE.service.TokenService;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +14,7 @@ import com.sum_news_BE.web.dto.TokenResponseDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -21,6 +24,7 @@ public class TokenServiceImpl implements TokenService {
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UserRepository userRepository;
+	private final RedisTokenBlacklistService redisTokenBlacklistService;
 
 	@Override
 	public TokenResponseDTO generateToken(String email) {
@@ -49,10 +53,8 @@ public class TokenServiceImpl implements TokenService {
 		String email = jwtProvider.getEmailFromToken(refreshToken);
 		log.info("리프레시 토큰에서 추출한 이메일: {}", email);
 
-		// 기존 리프레시 토큰 삭제
 		deleteRefreshToken(email);
 
-		// 사용자 존재 여부 확인
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> {
 					log.error("사용자를 찾을 수 없음: {}", email);
@@ -60,11 +62,9 @@ public class TokenServiceImpl implements TokenService {
 				});
 		log.info("사용자 조회 성공: {}", email);
 
-		// 새로운 토큰 발급
 		String newAccessToken = jwtProvider.generateAccessToken(email);
 		String newRefreshToken = jwtProvider.generateRefreshToken(email);
 
-		// 새로운 리프레시 토큰 저장
 		saveRefreshToken(email, newRefreshToken);
 
 		return TokenResponseDTO.builder()
@@ -76,11 +76,9 @@ public class TokenServiceImpl implements TokenService {
 	@Override
 	@Transactional
 	public void saveRefreshToken(String email, String refreshToken) {
-		// 기존 리프레시 토큰이 있다면 삭제
 		refreshTokenRepository.findByEmail(email)
 				.ifPresent(refreshTokenRepository::delete);
 
-		// 새로운 리프레시 토큰 저장
 		RefreshToken newRefreshToken = RefreshToken.builder()
 				.email(email)
 				.refreshToken(refreshToken)
@@ -106,6 +104,16 @@ public class TokenServiceImpl implements TokenService {
 
 		String email = jwtProvider.getEmailFromToken(refreshToken);
 		deleteRefreshToken(email);
-		log.info("로그아웃 완료: {}", email);
+		redisTokenBlacklistService.blacklistToken(refreshToken);
+		
+		log.info("로그아웃 완료: {} (토큰 블랙리스트 추가)", email);
+	}
+
+	@Override
+	public String resolveToken(String bearerToken) {
+		if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+			return bearerToken.substring(7);
+		}
+		return null;
 	}
 }
