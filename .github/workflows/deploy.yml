@@ -32,7 +32,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # main 또는 develop 브랜치에 push 이벤트가 발생했을 때만 실행
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
     steps:
       - name: Deploy to EC2
