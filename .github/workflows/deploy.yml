@@ -42,13 +42,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             IMAGE_NAME="${{ needs.build.outputs.image_name }}"
-            CONTAINER_NAME=""
-            PORT=""
-
+            
             if [ -z "$IMAGE_NAME" ]; then
               echo "IMAGE_NAME is not set. Exiting."
               exit 1
             fi
+
+            CONTAINER_NAME=""
+            PORT=""
 
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
               CONTAINER_NAME="prod-app"
@@ -60,7 +61,6 @@ jobs:
             
             sudo docker stop $CONTAINER_NAME || true
             sudo docker rm $CONTAINER_NAME || true
-
             sudo docker pull "$IMAGE_NAME"
             
             sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
