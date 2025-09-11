@@ -1,68 +1,39 @@
-name: sync_BE CI/CD
+deploy:
+  needs: build
+  runs-on: ubuntu-latest
+  if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+  steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          IMAGE_NAME="${{ needs.build.outputs.image_name }}"
 
-on:
-  push:
-    branches: ["main", "develop"]
-  pull_request:
-    branches: ["main", "develop"]
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "IMAGE_NAME is not set. Exiting."
+            exit 1
+          fi
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    outputs:
-      image_name: ${{ steps.docker_build.outputs.image_name }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            CONTAINER_NAME="prod-app"
+            PORT="8080"
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            CONTAINER_NAME="dev-app"
+            PORT="8081"
+          fi
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          sudo docker stop $CONTAINER_NAME || true
+          sudo docker rm $CONTAINER_NAME || true
+          sudo docker pull $IMAGE_NAME
 
-      - name: Build and Push Docker image
-        id: docker_build
-        run: |
-          IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
-          docker build -t $IMAGE_NAME .
-          docker push $IMAGE_NAME
-          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
+            -e MONGO_URI="${{ secrets.MONGO_URI }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
+            --restart=always \
+            $IMAGE_NAME
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
-    steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            IMAGE_NAME=${{ needs.build.outputs.image_name }}
-            CONTAINER_NAME=""
-            PORT=""
-
-            # 현재 브랜치에 따라 포트와 컨테이너 이름을 설정
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              CONTAINER_NAME="prod-app"
-              PORT="8080"
-            elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-              CONTAINER_NAME="dev-app"
-              PORT="8081"
-            fi
-            
-            sudo docker stop $CONTAINER_NAME || true
-            sudo docker rm $CONTAINER_NAME || true
-            sudo docker pull $IMAGE_NAME
-            
-            sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
-              -e MONGO_URI="${{ secrets.MONGO_URI }}" \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
-              --restart=always \
-              $IMAGE_NAME
-            
-            sudo docker image prune -f
+          sudo docker image prune -f
