@@ -29,50 +29,46 @@ jobs:
           docker push $IMAGE_NAME
           echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
-    env:
-      IMAGE_NAME: ${{ needs.build.outputs.image_name }}
-    steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        env:
-          IMAGE_NAME: ${{ needs.build.outputs.image_name }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE_NAME
-          script: |
-            echo "Using image: $IMAGE_NAME"
-            
-            if [ -z "$IMAGE_NAME" ]; then
-              echo "IMAGE_NAME is not set. Exiting."
-              exit 1
-            fi
+deploy:
+  needs: build
+  runs-on: ubuntu-latest
+  if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
+  steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}"
+          echo "Using IMAGE_NAME: $IMAGE_NAME"
+          
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "IMAGE_NAME is not set. Exiting."
+            exit 1
+          fi
 
-            CONTAINER_NAME=""
-            PORT=""
+          CONTAINER_NAME=""
+          PORT=""
 
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              CONTAINER_NAME="prod-app"
-              PORT="8080"
-            elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-              CONTAINER_NAME="dev-app"
-              PORT="8081"
-            fi
-            
-            sudo docker stop $CONTAINER_NAME || true
-            sudo docker rm $CONTAINER_NAME || true
-            sudo docker pull "$IMAGE_NAME"
-            
-            sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
-              -e MONGO_URI="${{ secrets.MONGO_URI }}" \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
-              --restart=always \
-              "$IMAGE_NAME"
-            
-            sudo docker image prune -f
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            CONTAINER_NAME="prod-app"
+            PORT="8080"
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            CONTAINER_NAME="dev-app"
+            PORT="8081"
+          fi
+          
+          sudo docker stop $CONTAINER_NAME || true
+          sudo docker rm $CONTAINER_NAME || true
+          sudo docker pull "$IMAGE_NAME"
+          
+          sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
+            -e MONGO_URI="${{ secrets.MONGO_URI }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
+            --restart=always \
+            "$IMAGE_NAME"
+          
+          sudo docker image prune -f
