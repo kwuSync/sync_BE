@@ -27,7 +27,7 @@ jobs:
           IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
-          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
   deploy:
     needs: build
