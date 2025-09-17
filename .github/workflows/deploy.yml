@@ -25,17 +25,24 @@ jobs:
       - name: Build and (Optionally) Push Docker image
         id: docker_build
         run: |
+          # 디버깅 추가
+          set -x # 실행되는 모든 명령어를 로그에 출력
+          echo "=========================================="
+          echo "Current event is: ${{ github.event_name }}"
+          echo "Current ref is: ${{ github.ref }}"
+          echo "=========================================="
+
           IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
           docker build -t $IMAGE_NAME .
-          echo "Docker image built: $IMAGE_NAME"
-
+          
           if [ "${{ github.event_name }}" == "push" ]; then
-            echo "Pushing image to Docker Hub..."
+            echo "Event is 'push'. Attempting to push to Docker Hub..."
             docker push $IMAGE_NAME
+            echo "Docker push command finished. Now setting output."
             echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-            echo "Output 'image_name' has been set."
+            echo "Output 'image_name' was set to: $IMAGE_NAME"
           else
-            echo "Skipping push and output generation for non-push event."
+            echo "Event is not 'push'. Skipping push and output."
           fi
 
   deploy:
