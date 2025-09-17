@@ -44,6 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
         env:
           IMAGE_NAME: ${{ needs.build.outputs.image_name }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
