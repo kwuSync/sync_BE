@@ -33,15 +33,20 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
+    env:
+      IMAGE_NAME: ${{ needs.build.outputs.image_name }}
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
+        env:
+          IMAGE_NAME: ${{ needs.build.outputs.image_name }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_NAME
           script: |
-            IMAGE_NAME="${{ needs.build.outputs.image_name }}"
+            echo "Using image: $IMAGE_NAME"
             
             if [ -z "$IMAGE_NAME" ]; then
               echo "IMAGE_NAME is not set. Exiting."
