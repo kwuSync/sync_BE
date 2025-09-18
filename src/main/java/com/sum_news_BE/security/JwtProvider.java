@@ -2,6 +2,7 @@ package com.sum_news_BE.security;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -49,23 +51,32 @@ public class JwtProvider {
 
 	public String generateAccessToken(String email) {
 		log.info("AccessToken 생성: {}", email);
+
+		UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+		String authorities = userDetails.getAuthorities().stream()
+			.map(GrantedAuthority::getAuthority)
+			.collect(Collectors.joining(","));
+
 		return Jwts.builder()
-				.setSubject(email)
-				.setIssuedAt(new Date())
-				.setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-				.signWith(getSigningKey(), SignatureAlgorithm.HS256)
-				.compact();
+			.setSubject(email)
+			.claim("auth", authorities)
+			.setIssuedAt(new Date())
+			.setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
+			.signWith(getSigningKey(), SignatureAlgorithm.HS256)
+			.compact();
 	}
 
 	public String generateRefreshToken(String email) {
 		log.info("RefreshToken 생성 시도: {}", email);
+
 		try {
 			String token = Jwts.builder()
-					.setSubject(email)
-					.setIssuedAt(new Date())
-					.setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-					.signWith(getSigningKey(), SignatureAlgorithm.HS256)
-					.compact();
+				.setSubject(email)
+				.setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+				.signWith(getSigningKey(), SignatureAlgorithm.HS256)
+				.compact();
 			log.info("RefreshToken 생성 성공: {}", token);
 			return token;
 		} catch (Exception e) {
@@ -78,10 +89,10 @@ public class JwtProvider {
 		log.info("Attempting to parse token: '[{}]'", token);
 
 		Claims claims = Jwts.parserBuilder()
-				.setSigningKey(getSigningKey())
-				.build()
-				.parseClaimsJws(token)
-				.getBody();
+			.setSigningKey(getSigningKey())
+			.build()
+			.parseClaimsJws(token)
+			.getBody();
 		return claims.getSubject(); // subject에서 이메일 추출
 	}
 
@@ -93,9 +104,9 @@ public class JwtProvider {
 			}
 
 			Jwts.parserBuilder()
-					.setSigningKey(getSigningKey())
-					.build()
-					.parseClaimsJws(token);
+				.setSigningKey(getSigningKey())
+				.build()
+				.parseClaimsJws(token);
 			return true;
 		} catch (Exception e) {
 			return false;
