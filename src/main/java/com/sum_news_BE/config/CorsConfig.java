@@ -16,7 +16,7 @@ public class CorsConfig {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		CorsConfiguration config = new CorsConfiguration();
 
-		config.setAllowedOrigins(Arrays.asList("http://3.37.198.176:8080"));
+		config.setAllowedOriginPatterns(Arrays.asList("*"));
 
 		config.setAllowCredentials(true);
 		config.addAllowedHeader("*");

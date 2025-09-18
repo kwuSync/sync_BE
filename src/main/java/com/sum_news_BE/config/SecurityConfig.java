@@ -37,8 +37,7 @@ public class SecurityConfig {
 		"/api-docs/json",
 		"/user/join",
 		"/user/login",
-		"/user/password/reset",
-		"/user/password/confirm",
+		"/user/password/**",
 		"/mail/send",
 		"/mail/verify",
 		"/reissue"
@@ -48,7 +47,7 @@ public class SecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 			.addFilter(corsConfig.corsFilter())
-			.authorizeHttpRequests(request -> request
+			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(url).permitAll()
 				.anyRequest().authenticated())
 			.csrf(csrf -> csrf.disable())
