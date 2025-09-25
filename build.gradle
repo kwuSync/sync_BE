@@ -41,11 +41,10 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+tasks.named("jar") {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// 개발 환경에서 JSON 파일 사용을 위해 JAR에 포함
 jar {
 	from('src/main/resources') {
 		include '**/*.json'
