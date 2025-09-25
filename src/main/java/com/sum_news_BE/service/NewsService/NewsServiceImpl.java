@@ -44,11 +44,18 @@ public class NewsServiceImpl implements NewsService {
 	private final UserNewsLogRepository userNewsLogRepository;
 	private final UserRepository userRepository;
 	private final ObjectMapper objectMapper;
-
+	
 	@PostConstruct
 	public void init() {
+		// 환경 변수로 초기화 여부 제어 (기본값: false, 개발환경에서만 true로 설정)
+		String enableInit = System.getenv("ENABLE_DATA_INIT");
+		if (!"true".equals(enableInit)) {
+			log.info("===== ENABLE_DATA_INIT이 true가 아니므로 데이터 초기화를 건너뜁니다. =====");
+			return;
+		}
+		
 		try {
-			// 개발 환경에서 데이터 초기화를 위해 기존 데이터 모두 삭제 (운영 환경에서는 사용 주의)
+			// 개발 환경에서 데이터 초기화를 위해 기존 데이터 모두 삭제
 			newsArticleRepository.deleteAll();
 			newsSummaryRepository.deleteAll();
 			log.info("===== 기존 뉴스 데이터베이스 초기화 완료. =====");
