@@ -44,3 +44,10 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// 개발 환경에서 JSON 파일 사용을 위해 JAR에 포함
+jar {
+	from('src/main/resources') {
+		include '**/*.json'
+	}
+}
