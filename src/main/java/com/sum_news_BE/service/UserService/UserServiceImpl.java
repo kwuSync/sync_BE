@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sum_news_BE.api.exception.ResourceNotFoundException;
+import com.sum_news_BE.domain.Role;
 import com.sum_news_BE.domain.User;
 import com.sum_news_BE.repository.UserRepository;
 import com.sum_news_BE.service.MailService.MailService;
@@ -44,6 +45,7 @@ public class UserServiceImpl implements UserService {
                 .nickname(joinDTO.getNickname())
                 .password(passwordEncoder.encode(joinDTO.getPassword()))
                 .email(joinDTO.getEmail())
+                .role(Role.ROLE_USER)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
