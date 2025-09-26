@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.sum_news_BE.api.ApiResponse;
 
@@ -24,6 +25,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
+        String message = e.getMessage();
+
+        if (message != null && message.contains("Invalid character found in method name")) {
+            log.warn("Invalid HTTP method name received: {}", message);
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("400", "잘못된 HTTP 요청입니다."));
+        }
+        
         log.error("IllegalArgumentException: ", e);
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
@@ -44,6 +54,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ApiResponse.error("404", e.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException e) {
+        String resourcePath = e.getResourcePath();
+        
+        if (resourcePath == null || resourcePath.isEmpty() || resourcePath.equals(".") || resourcePath.equals("/")) {
+            log.debug("Invalid or empty resource path requested: '{}'", resourcePath);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("404", "요청한 리소스를 찾을 수 없습니다."));
+        }
+
+        log.warn("Static resource not found: {}", resourcePath);
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error("404", "요청한 리소스를 찾을 수 없습니다."));
     }
 
     @ExceptionHandler(Exception.class)
