@@ -124,6 +124,7 @@ jobs:
                     -e MONGO_URI='$MONGO_URI' \
                     -e JWT_SECRET='$JWT_SECRET' \
                     -e MAIL_PASSWORD='$MAIL_PASSWORD' \
+                    -e REDIS_HOST='$REDIS_HOST' \
                     $IMAGE_NAME && \
                     sudo docker image prune -f"
           
@@ -134,7 +135,7 @@ jobs:
             --query "Command.CommandId" \
             --output text \
             --timeout-seconds 600 \
-            --parameters "commands=[\"$COMMANDS\"]")
+            --parameters commands="$COMMANDS")
 
           echo "Command sent with ID: $COMMAND_ID"
           echo "Waiting for command to complete..."
