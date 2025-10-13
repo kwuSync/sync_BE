@@ -28,23 +28,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 		throws ServletException, IOException {
+
 		try {
 			String jwt = resolveToken(request);
 			log.debug("JWT Token: {}", jwt);
 
 			if (StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt)) {
-				if (redisTokenBlacklistService.isBlacklisted(jwt)) {
+				boolean isBlacklisted = false;
+				try {
+					isBlacklisted = redisTokenBlacklistService.isBlacklisted(jwt);
+				} catch (Exception redisEx) {
+					log.error("Redis 연결 실패로 블랙리스트 검증을 건너뜀: {}", redisEx.getMessage());
+				}
+
+				if (isBlacklisted) {
 					log.warn("블랙리스트에 등록된 토큰: {}...", jwt.substring(0, Math.min(10, jwt.length())));
 					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 					return;
 				}
-				
+
 				Authentication authentication = jwtProvider.getAuthentication(jwt);
 				SecurityContextHolder.getContext().setAuthentication(authentication);
-				log.debug("Set Authentication to security context for '{}', uri: {}", authentication.getName(), request.getRequestURI());
+				log.debug("Set Authentication to security context for '{}', uri: {}",
+					authentication.getName(), request.getRequestURI());
 			}
 		} catch (Exception e) {
-			log.error("Cannot set user authentication: {}", e.getMessage());
+			log.error("Cannot set user authentication: {}", e.getMessage(), e);
 		}
 
 		filterChain.doFilter(request, response);
