@@ -135,7 +135,7 @@ jobs:
             --query "Command.CommandId" \
             --output text \
             --timeout-seconds 600 \
-            --parameters commands="$COMMANDS") # <--- 여기가 최종 수정된 부분입니다.
+            --parameters commands="$COMMANDS")
 
           echo "Command sent with ID: $COMMAND_ID"
           echo "Waiting for command to complete..."
