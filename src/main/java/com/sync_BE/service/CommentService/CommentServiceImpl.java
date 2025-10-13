@@ -110,16 +110,29 @@ public class CommentServiceImpl implements CommentService {
     }
 
     private CommentResponseDTO.CommentDTO convertToCommentDTO(Comment comment, ObjectId currentUserId) {
-        boolean isOwner = currentUserId != null && comment.getUser().getId().equals(currentUserId);
-        return CommentResponseDTO.CommentDTO.builder()
+        if (comment.getUser() == null) {
+            return CommentResponseDTO.CommentDTO.builder()
                 .commentId(comment.getId().toHexString())
-                .userId(comment.getUser().getId().toHexString())
-                .userName(comment.getUser().getNickname())
+                .userId(null)
+                .userName("탈퇴한 사용자")
                 .commentText(comment.getCommentText())
-                .clusterId(comment.getClusterId().toString())
+                .clusterId(comment.getClusterId())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
-                .isOwner(isOwner)
+                .isOwner(false)
                 .build();
+        }
+
+        boolean isOwner = currentUserId != null && comment.getUser().getId().equals(currentUserId);
+        return CommentResponseDTO.CommentDTO.builder()
+            .commentId(comment.getId().toHexString())
+            .userId(comment.getUser().getId().toHexString())
+            .userName(comment.getUser().getNickname())
+            .commentText(comment.getCommentText())
+            .clusterId(comment.getClusterId())
+            .createdAt(comment.getCreatedAt())
+            .updatedAt(comment.getUpdatedAt())
+            .isOwner(isOwner)
+            .build();
     }
 }
