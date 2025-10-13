@@ -102,6 +102,9 @@ jobs:
         env:
           IMAGE_NAME: ${{ steps.image.outputs.name }}
           GIT_BRANCH_REF: ${{ github.ref }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         run: |
           if [[ "$GIT_BRANCH_REF" == "refs/heads/main" ]]; then
             CONTAINER_NAME="sync-prod"
@@ -116,7 +119,11 @@ jobs:
                     sudo docker pull $IMAGE_NAME && \
                     (sudo docker stop $CONTAINER_NAME || true) && \
                     (sudo docker rm $CONTAINER_NAME || true) && \
-                    sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME $IMAGE_NAME && \
+                    sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
+                    -e MONGO_URI='$MONGO_URI' \
+                    -e JWT_SECRET='$JWT_SECRET' \
+                    -e MAIL_PASSWORD='$MAIL_PASSWORD' \
+                    $IMAGE_NAME && \
                     sudo docker image prune -f"
           
           echo "Sending command to EC2 instance..."
