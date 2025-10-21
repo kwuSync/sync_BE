@@ -55,7 +55,7 @@ public class CommentController {
         return ApiResponse.ok("댓글 수 조회가 완료되었습니다.", result);
     }
 
-    @PutMapping("/{commentId}")
+    @PatchMapping("/{commentId}")
     @Operation(summary = "댓글 수정", description = "댓글을 수정합니다.")
     public ApiResponse<CommentResponseDTO.CommentActionDTO> updateComment(
             @PathVariable String clusterId,
