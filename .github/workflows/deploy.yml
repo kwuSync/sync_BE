@@ -17,8 +17,8 @@ jobs:
         run: |
             echo "Cleaning up disk space..."
             docker system prune -af
-
-            rm -rf /root/.gradle/caches/
+          
+            rm -rf ~/.gradle/caches/
             
             echo "Disk space after cleanup:"
             df -h
