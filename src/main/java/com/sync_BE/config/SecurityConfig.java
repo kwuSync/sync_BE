@@ -22,20 +22,20 @@ public class SecurityConfig {
 	private final CorsConfig corsConfig;
 
 	public static final String[] url = {
-		"/",
-		"/swagger-ui/**",
-		"/swagger-ui.html",
-		"/swagger-resources/**",
-		"/v3/api-docs/**",
-		"/api-docs/**",
-		"/api-docs/json/swagger-config",
-		"/api-docs/json",
-		"/user/join",
-		"/user/login",
-		"/user/password/**",
-		"/mail/send",
-		"/mail/verify",
-		"/reissue"
+		"/api/",
+		"/api/swagger-ui/**",
+		"/api/swagger-ui.html",
+		"/api/swagger-resources/**",
+		"/api/v3/api-docs/**",
+		"/api/api-docs/**",
+		"/api/api-docs/json/swagger-config",
+		"/api/api-docs/json",
+		"/api/user/join",
+		"/api/user/login",
+		"/api/user/password/**",
+		"/api/mail/send",
+		"/api/mail/verify",
+		"/api/reissue"
 	};
 
 	@Bean
