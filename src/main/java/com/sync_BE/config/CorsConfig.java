@@ -16,7 +16,10 @@ public class CorsConfig {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		CorsConfiguration config = new CorsConfiguration();
 
-		config.addAllowedOriginPattern("*");
+		config.addAllowedOrigin("https://newsync.kr");
+		config.addAllowedOrigin("https://sync-fe-one.vercel.app");
+		config.addAllowedOrigin("https://localhost:3000");
+		config.addAllowedOrigin("https://52.79.237.72/");
 
 		config.setAllowCredentials(true);
 		config.addAllowedHeader("*");
