@@ -138,6 +138,7 @@ jobs:
           -e JWT_SECRET='$JWT_SECRET' \
           -e MAIL_PASSWORD='$MAIL_PASSWORD' \
           -e REDIS_HOST='$REDIS_HOST' \
+          -e SERVER_SERVLET_CONTEXT_PATH='/api' \
           $IMAGE_NAME && \
           sudo docker image prune -f
           EOF
