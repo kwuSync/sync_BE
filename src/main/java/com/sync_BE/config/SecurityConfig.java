@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 import com.sync_BE.security.JwtAuthenticationFilter;
 
@@ -42,15 +43,15 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
-			.addFilterBefore(corsConfig.corsFilter(), org.springframework.security.web.context.SecurityContextHolderFilter.class)
-			.authorizeHttpRequests(authorize -> authorize
+			.csrf(csrf -> csrf.disable())
+			.headers(headers -> headers.frameOptions(frame -> frame.disable()))
+			.addFilterBefore(corsConfig.corsFilter(), SecurityContextHolderFilter.class)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers(url).permitAll()
-				.anyRequest().authenticated())
-			.csrf(csrf -> csrf.disable())
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+				.anyRequest().authenticated());
 		return http.build();
 	}
 
