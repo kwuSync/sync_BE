@@ -46,12 +46,13 @@ public class SecurityConfig {
 			.csrf(csrf -> csrf.disable())
 			.headers(headers -> headers.frameOptions(frame -> frame.disable()))
 			.addFilterBefore(corsConfig.corsFilter(), SecurityContextHolderFilter.class)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers(url).permitAll()
-				.anyRequest().authenticated());
+				.anyRequest().authenticated())
+
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
 
