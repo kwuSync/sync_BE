@@ -25,7 +25,7 @@ public class CommentController {
     @Operation(summary = "댓글 작성", description = "댓글을 작성합니다.")
     public ApiResponse<CommentResponseDTO.CommentActionDTO> createComment(
             @PathVariable String clusterId,
-            @Valid @RequestBody CommentRequestDTO.CreateDTO request,
+            @Valid @RequestBody CommentRequestDTO.CommentCreateDTO request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         ObjectId userId = userDetails.getUser().getId();
@@ -60,7 +60,7 @@ public class CommentController {
     public ApiResponse<CommentResponseDTO.CommentActionDTO> updateComment(
             @PathVariable String clusterId,
             @PathVariable String commentId,
-            @Valid @RequestBody CommentRequestDTO.UpdateDTO request,
+            @Valid @RequestBody CommentRequestDTO.CommentUpdateDTO request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         ObjectId userId = userDetails.getUser().getId();

@@ -26,7 +26,7 @@ public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
 
     @Override
-    public CommentResponseDTO.CommentActionDTO createComment(String clusterId, CommentRequestDTO.CreateDTO request, ObjectId userId) {
+    public CommentResponseDTO.CommentActionDTO createComment(String clusterId, CommentRequestDTO.CommentCreateDTO request, ObjectId userId) {
         User user = findUserById(userId);
 
         Comment comment = Comment.builder()
@@ -60,7 +60,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentResponseDTO.CommentActionDTO updateComment(String commentId, CommentRequestDTO.UpdateDTO request, ObjectId userId) {
+    public CommentResponseDTO.CommentActionDTO updateComment(String commentId, CommentRequestDTO.CommentUpdateDTO request, ObjectId userId) {
         Comment comment = findCommentById(commentId);
         validateCommentOwnership(comment, userId);
         comment.setCommentText(request.getCommentText());
