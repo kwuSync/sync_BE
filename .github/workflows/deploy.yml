@@ -120,6 +120,7 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           REDIS_HOST: 172.31.39.9
           EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          TTS_KEY: ${{ secrets.TTS_KEY }}
         run: |
           if [[ "$GIT_BRANCH_REF" == "refs/heads/main" ]]; then
             CONTAINER_NAME="sync-prod"
@@ -130,16 +131,24 @@ jobs:
           fi
 
           COMMANDS_STRING=$(cat <<EOF
+          echo "$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json && \
+          
+          
           sudo docker pull $IMAGE_NAME && \
           (sudo docker stop $CONTAINER_NAME || true) && \
           (sudo docker rm $CONTAINER_NAME || true) && \
+          
+          
           sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
+          -v /tmp/google-tts-key.json:/app/google-tts-key.json \
           -e MONGO_URI='$MONGO_URI' \
           -e JWT_SECRET='$JWT_SECRET' \
           -e MAIL_PASSWORD='$MAIL_PASSWORD' \
           -e REDIS_HOST='$REDIS_HOST' \
           -e SERVER_SERVLET_CONTEXT_PATH='/api' \
+          -e GOOGLE_APPLICATION_CREDENTIALS='/app/google-tts-key.json' \
           $IMAGE_NAME && \
+          
           sudo docker image prune -f
           EOF
           )
