@@ -17,6 +17,7 @@ public class CorsConfig {
 		CorsConfiguration config = new CorsConfiguration();
 
 		config.addAllowedOrigin("https://newsync.kr");
+		config.addAllowedOrigin("https://www.newsync.kr");
 		config.addAllowedOrigin("https://sync-fe-one.vercel.app");
 		config.addAllowedOrigin("https://localhost:3000");
 		config.addAllowedOrigin("http://localhost:5173");

@@ -5,8 +5,7 @@ AI 기반 뉴스 요약 & TTS 웹 서비스 백엔드 레포지토리 입니다.
 newsync.kr
 
 ## Swagger API test
-devlop branch의 코드를 받고 로컬 환경에서 Swagger 실행 후 API 테스트 (회원가입, 로그인, 비밀번호찾기, 이메일인증 외 기능은 accessToken 입력 후 테스트 실시)
-코드 받아온 후 Notion의 Swagger 페이지에 있는 보안 관련 코드 입력 필요
+회원가입, 로그인, 비밀번호찾기, 이메일인증 외 기능은 accessToken 입력 후 테스트 실시
 
 ## 커밋 컨벤션
 
