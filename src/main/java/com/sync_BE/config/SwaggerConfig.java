@@ -27,7 +27,7 @@ public class SwaggerConfig {
 				.scheme("bearer")
 				.bearerFormat("JWT"));
 
-		Server server = new Server().url("/").description("Deployed server");
+		Server server = new Server().url("/api").description("Deployed server");
 
 		return new OpenAPI()
 			.addServersItem(server)
