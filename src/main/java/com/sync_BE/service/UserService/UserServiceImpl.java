@@ -9,7 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sync_BE.api.exception.ResourceNotFoundException;
 import com.sync_BE.domain.Role;
 import com.sync_BE.domain.User;
+import com.sync_BE.domain.UserSetting;
 import com.sync_BE.repository.UserRepository;
+import com.sync_BE.repository.UserSettingRepository;
 import com.sync_BE.service.MailService.MailService;
 import com.sync_BE.service.MailService.MailVerificationService;
 import com.sync_BE.web.dto.userDTO.UserRequestDTO;
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class UserServiceImpl implements UserService {
     
     private final UserRepository userRepository;
+    private final UserSettingRepository userSettingRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailVerificationService mailVerificationService;
     private final MailService mailService;
@@ -130,6 +133,27 @@ public class UserServiceImpl implements UserService {
                 throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
             }
             user.updatePassword(passwordEncoder.encode(updateDTO.getPassword()));
+        }
+
+        UserSetting userSetting = userSettingRepository.findByUserId(user.getId())
+            .orElse(new UserSetting());
+
+        if (userSetting.getId() == null) {
+            userSetting.setUser(user);
+        }
+
+        boolean settingChanged = false;
+
+        if (updateDTO.getTtsVoice() != null) {
+            userSetting.setTtsVoice(updateDTO.getTtsVoice());
+            settingChanged = true;
+        }
+
+        if (settingChanged || userSetting.getId() == null) {
+            userSetting.setUpdatedAt(LocalDateTime.now());
+            UserSetting savedSetting = userSettingRepository.save(userSetting);
+
+            user.setUserSetting(savedSetting);
         }
 
         return userRepository.save(user);
