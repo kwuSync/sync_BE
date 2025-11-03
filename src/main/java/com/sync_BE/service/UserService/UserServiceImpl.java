@@ -149,6 +149,15 @@ public class UserServiceImpl implements UserService {
             settingChanged = true;
         }
 
+        if (updateDTO.getPitch() != null) {
+            userSetting.setPitch(updateDTO.getPitch());
+            settingChanged = true;
+        }
+        if (updateDTO.getSpeakingRate() != null) {
+            userSetting.setSpeakingRate(updateDTO.getSpeakingRate());
+            settingChanged = true;
+        }
+
         if (settingChanged || userSetting.getId() == null) {
             userSetting.setUpdatedAt(LocalDateTime.now());
             UserSetting savedSetting = userSettingRepository.save(userSetting);

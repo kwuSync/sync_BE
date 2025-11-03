@@ -51,8 +51,8 @@ public class TTSService {
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
-		String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
-		return synthesize(summaryText, voiceName);
+
+		return synthesize(summaryText, settingOpt);
 	}
 
 	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails userDetails) throws IOException {
@@ -72,10 +72,10 @@ public class TTSService {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
 		String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
-		return synthesize(summaryText, voiceName);
+		return synthesize(summaryText, settingOpt);
 	}
 
-	private byte[] synthesize(String text, String userVoiceName) throws IOException {
+	private byte[] synthesize(String text, Optional<UserSetting> settingOpt) throws IOException {
 		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
 			SynthesisInput input = SynthesisInput.newBuilder()
 				.setText(text)
@@ -83,9 +83,11 @@ public class TTSService {
 
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
 
-			if (userVoiceName != null && !userVoiceName.isEmpty()) {
-				voiceBuilder.setName(userVoiceName);
-				if (userVoiceName.startsWith("ko-KR")) {
+			String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
+
+			if (voiceName != null && !voiceName.isEmpty()) {
+				voiceBuilder.setName(voiceName);
+				if (voiceName.startsWith("ko-KR")) {
 					voiceBuilder.setLanguageCode("ko-KR");
 				}
 			} else {
@@ -94,9 +96,21 @@ public class TTSService {
 			}
 			VoiceSelectionParams voice = voiceBuilder.build();
 
-			AudioConfig audioConfig = AudioConfig.newBuilder()
-				.setAudioEncoding(AudioEncoding.MP3)
-				.build();
+			AudioConfig.Builder audioBuilder = AudioConfig.newBuilder()
+				.setAudioEncoding(AudioEncoding.MP3);
+
+			if (settingOpt.isPresent()) {
+				UserSetting setting = settingOpt.get();
+				if (setting.getPitch() != null) {
+					audioBuilder.setPitch(setting.getPitch());
+				}
+				if (setting.getSpeakingRate() != null) {
+					audioBuilder.setSpeakingRate(setting.getSpeakingRate());
+				}
+			}
+
+			AudioConfig audioConfig = audioBuilder.build();
+
 			SynthesizeSpeechResponse response = textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
 			ByteString audioContents = response.getAudioContent();
 			return audioContents.toByteArray();
