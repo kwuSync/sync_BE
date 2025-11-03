@@ -24,5 +24,9 @@ public class UserSetting {
 	private boolean ttsEnabled;
 	private String ttsVoice;
 
+	private Double pitch;
+
+	private Double speakingRate;
+
 	private LocalDateTime updatedAt;
 }

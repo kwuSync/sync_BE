@@ -22,6 +22,7 @@ public class CorsConfig {
 		config.addAllowedOrigin("https://localhost:3000");
 		config.addAllowedOrigin("http://localhost:5173");
 		config.addAllowedOrigin("https://52.79.237.72/");
+		config.addAllowedOrigin("https://api.newsync.kr");
 
 		config.setAllowCredentials(true);
 		config.addAllowedHeader("*");
