@@ -144,6 +144,11 @@ public class UserServiceImpl implements UserService {
 
         boolean settingChanged = false;
 
+        if (updateDTO.getTtsEnabled() != null) {
+            userSetting.setTtsEnabled(updateDTO.getTtsEnabled()); 
+            settingChanged = true;
+        }
+
         if (updateDTO.getTtsVoice() != null) {
             userSetting.setTtsVoice(updateDTO.getTtsVoice());
             settingChanged = true;
