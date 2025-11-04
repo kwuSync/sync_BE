@@ -66,6 +66,7 @@ public class UserRequestDTO {
 
         private Boolean ttsEnabled;
         private String ttsVoice;
+        private String ttsGender;
         private Double pitch;
         private Double speakingRate;
     }

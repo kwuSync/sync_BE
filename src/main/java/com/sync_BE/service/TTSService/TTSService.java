@@ -82,18 +82,29 @@ public class TTSService {
 				.build();
 
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
+			voiceBuilder.setLanguageCode("ko-KR");
+
 
 			String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
+			String gender = settingOpt.map(UserSetting::getTtsGender).orElse(null);
 
 			if (voiceName != null && !voiceName.isEmpty()) {
 				voiceBuilder.setName(voiceName);
-				if (voiceName.startsWith("ko-KR")) {
-					voiceBuilder.setLanguageCode("ko-KR");
-				}
-			} else {
-				voiceBuilder.setLanguageCode("ko-KR")
-					.setSsmlGender(SsmlVoiceGender.FEMALE);
 			}
+			else if (gender != null && !gender.isEmpty()) {
+				if (gender.equalsIgnoreCase("MALE")) {
+					voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
+				} else if (gender.equalsIgnoreCase("FEMALE")) {
+					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+				} else {
+					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+				}
+			}
+			else {
+				// 설정 없을 시 Female
+				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+			}
+
 			VoiceSelectionParams voice = voiceBuilder.build();
 
 			AudioConfig.Builder audioBuilder = AudioConfig.newBuilder()
