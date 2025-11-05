@@ -31,7 +31,8 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'com.google.cloud:google-cloud-texttospeech:2.42.0'
+	implementation(platform("com.google.cloud:libraries-bom:26.71.0"))
+	implementation 'com.google.cloud:google-cloud-texttospeech'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
