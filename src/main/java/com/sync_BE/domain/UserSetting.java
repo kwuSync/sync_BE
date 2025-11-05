@@ -7,13 +7,18 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "user_setting")
 public class UserSetting {
 
@@ -21,13 +26,12 @@ public class UserSetting {
 	private ObjectId id;
 
 	@DBRef
-	@JsonIgnore
+	@JsonBackReference
 	private User user;
 
 	private boolean ttsEnabled;
-	private String ttsVoice;
 
-	private String ttsGender;
+	private String ttsVoiceName;
 
 	private Double pitch;
 
