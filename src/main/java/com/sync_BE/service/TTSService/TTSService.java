@@ -17,6 +17,7 @@ import com.sync_BE.domain.UserSetting;
 import com.sync_BE.repository.UserSettingRepository;
 import com.sync_BE.security.CustomUserDetails;
 import com.sync_BE.service.NewsService.NewsService;
+import com.sync_BE.web.dto.TTSRequestDTO;
 import com.sync_BE.web.dto.newsDTO.NewsResponseDTO;
 
 @Service
@@ -37,7 +38,7 @@ public class TTSService {
 		return userSettingRepository.findByUserId(userDetails.getUser().getId());
 	}
 
-	public byte[] synthesizeMainSummary(CustomUserDetails userDetails) throws IOException {
+	public byte[] synthesizeMainSummary(CustomUserDetails userDetails, TTSRequestDTO ttsRequestDTO) throws IOException {
 		NewsResponseDTO.NewsListDTO mainNewsList = newsService.getMain();
 
 		if (mainNewsList == null || mainNewsList.getNewsList() == null || mainNewsList.getNewsList().isEmpty()) {
@@ -52,10 +53,10 @@ public class TTSService {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
 
-		return synthesize(summaryText, settingOpt);
+		return synthesize(summaryText, settingOpt, ttsRequestDTO);
 	}
 
-	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails userDetails) throws IOException {
+	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails userDetails, TTSRequestDTO ttsRequestDTO) throws IOException {
 		NewsResponseDTO.NewsClusterDTO newsCluster = newsService.getNewsSummaryByClusterId(clusterId);
 		if (newsCluster == null || newsCluster.getSummary() == null || newsCluster.getSummary().getArticle() == null) { //
 			throw new IOException("요약된 뉴스를 찾을 수 없습니다.");
@@ -68,12 +69,14 @@ public class TTSService {
 
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
-			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
+			if (ttsRequestDTO == null) {
+				throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
+			}
 		}
-		return synthesize(summaryText, settingOpt);
+		return synthesize(summaryText, settingOpt, ttsRequestDTO);
 	}
 
-	private byte[] synthesize(String text, Optional<UserSetting> settingOpt) throws IOException {
+	private byte[] synthesize(String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
 		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
 			SynthesisInput input = SynthesisInput.newBuilder()
 				.setText(text)
@@ -82,20 +85,27 @@ public class TTSService {
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
 			voiceBuilder.setLanguageCode("ko-KR");
 
-			String voiceName = settingOpt.map(UserSetting::getTtsVoiceName).orElse(null);
+			String effectiveVoiceName = null;
 
-			if ("MALE".equalsIgnoreCase(voiceName)) {
-				voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
+			if (ttsRequestDTO != null && ttsRequestDTO.getVoiceName() != null && !ttsRequestDTO.getVoiceName().isEmpty()) {
+				effectiveVoiceName = ttsRequestDTO.getVoiceName();
 			}
-			else if ("FEMALE".equalsIgnoreCase(voiceName)) {
 
-				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+			else if (settingOpt.isPresent() && settingOpt.get().getTtsVoiceName() != null) {
+				effectiveVoiceName = settingOpt.get().getTtsVoiceName();
 			}
-			else if (voiceName != null && !voiceName.isEmpty()) {
-				voiceBuilder.setName(voiceName);
-			}
+
 			else {
-				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+				effectiveVoiceName = "FEMALE";
+			}
+
+			if ("MALE".equalsIgnoreCase(effectiveVoiceName)) {
+				voiceBuilder.setName("Alnilam");
+			} else if ("FEMALE".equalsIgnoreCase(effectiveVoiceName)) {
+				voiceBuilder.setName("Achernar");
+			} else {
+				// 특정 이름을 직접 지정한 경우
+				voiceBuilder.setName(effectiveVoiceName);
 			}
 
 			VoiceSelectionParams voice = voiceBuilder.build();
@@ -103,14 +113,25 @@ public class TTSService {
 			AudioConfig.Builder audioBuilder = AudioConfig.newBuilder()
 				.setAudioEncoding(AudioEncoding.MP3);
 
-			if (settingOpt.isPresent()) {
-				UserSetting setting = settingOpt.get();
-				if (setting.getPitch() != null) {
-					audioBuilder.setPitch(setting.getPitch());
-				}
-				if (setting.getSpeakingRate() != null) {
-					audioBuilder.setSpeakingRate(setting.getSpeakingRate());
-				}
+			Double pitch = null;
+			if (ttsRequestDTO != null && ttsRequestDTO.getPitch() != null) {
+				pitch = ttsRequestDTO.getPitch();
+			} else if (settingOpt.isPresent()) {
+				pitch = settingOpt.get().getPitch();
+			}
+			if (pitch != null) {
+				audioBuilder.setPitch(pitch);
+			}
+
+			Double speakingRate = null;
+			if (ttsRequestDTO != null && ttsRequestDTO.getSpeakingRate() != null) {
+				speakingRate = ttsRequestDTO.getSpeakingRate();
+			} else if (settingOpt.isPresent()) {
+				speakingRate = settingOpt.get().getSpeakingRate();
+			}
+
+			if (speakingRate != null) {
+				audioBuilder.setSpeakingRate(speakingRate);
 			}
 
 			AudioConfig audioConfig = audioBuilder.build();
