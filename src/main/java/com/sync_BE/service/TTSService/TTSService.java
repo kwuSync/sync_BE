@@ -62,16 +62,10 @@ public class TTSService {
 		}
 		String summaryText = newsCluster.getSummary().getArticle();
 
-		if (summaryText.isEmpty()) {
-			throw new IOException("요약 텍스트가 비어있습니다.");
-		}
-
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
-
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
-		String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
 		return synthesize(summaryText, settingOpt);
 	}
 
@@ -85,23 +79,19 @@ public class TTSService {
 			voiceBuilder.setLanguageCode("ko-KR");
 
 
-			String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
-			String gender = settingOpt.map(UserSetting::getTtsGender).orElse(null);
+			String voiceName = settingOpt.map(UserSetting::getTtsVoiceName).orElse(null);
 
-			if (voiceName != null && !voiceName.isEmpty()) {
+			if ("MALE".equalsIgnoreCase(voiceName)) {
+				voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
+			}
+			else if ("FEMALE".equalsIgnoreCase(voiceName)) {
+
+				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+			}
+			else if (voiceName != null && !voiceName.isEmpty()) {
 				voiceBuilder.setName(voiceName);
 			}
-			else if (gender != null && !gender.isEmpty()) {
-				if (gender.equalsIgnoreCase("MALE")) {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
-				} else if (gender.equalsIgnoreCase("FEMALE")) {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
-				} else {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
-				}
-			}
 			else {
-				// 설정 없을 시 Female
 				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
 			}
 
