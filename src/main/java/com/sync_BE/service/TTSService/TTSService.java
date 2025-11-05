@@ -62,6 +62,10 @@ public class TTSService {
 		}
 		String summaryText = newsCluster.getSummary().getArticle();
 
+		if (summaryText.isEmpty()) {
+			throw new IOException("요약 텍스트가 비어있습니다.");
+		}
+
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
@@ -77,7 +81,6 @@ public class TTSService {
 
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
 			voiceBuilder.setLanguageCode("ko-KR");
-
 
 			String voiceName = settingOpt.map(UserSetting::getTtsVoiceName).orElse(null);
 
