@@ -1,6 +1,8 @@
 package com.sync_BE.service.TTSService;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -44,12 +46,13 @@ public class TTSService {
 		if (mainNewsList == null || mainNewsList.getNewsList() == null || mainNewsList.getNewsList().isEmpty()) {
 			throw new IOException("메인 요약 뉴스를 찾을 수 없습니다.");
 		}
-		
-		String summaryText = mainNewsList.getNewsList().stream()
-				.map(NewsResponseDTO.NewsArticleDTO::getSummaryText)
-				.collect(Collectors.joining(". "));
 
-		if (summaryText.isEmpty()) {
+		List<String> summaryTexts = mainNewsList.getNewsList().stream()
+				.map(NewsResponseDTO.NewsArticleDTO::getSummaryText)
+				.filter(text -> text != null && !text.isEmpty())
+				.collect(Collectors.toList());
+
+		if (summaryTexts.isEmpty()) {
 			throw new IOException("요약 텍스트가 비어있습니다.");
 		}
 
@@ -59,7 +62,14 @@ public class TTSService {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
 
-		return synthesize(summaryText, settingOpt, ttsRequestDTO);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+		for (String text : summaryTexts) {
+			byte[] audioChunk = synthesize(text, settingOpt, ttsRequestDTO);
+			outputStream.write(audioChunk);
+		}
+
+		return outputStream.toByteArray();
 	}
 
 	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails userDetails, TTSRequestDTO ttsRequestDTO) throws IOException {
