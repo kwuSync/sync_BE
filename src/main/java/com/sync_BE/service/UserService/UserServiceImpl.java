@@ -53,6 +53,15 @@ public class UserServiceImpl implements UserService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        UserSetting newUserSetting = UserSetting.builder()
+            .user(user)
+            .ttsEnabled(true)
+            .ttsVoiceName("FEMALE")
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+        UserSetting savedSetting = userSettingRepository.save(newUserSetting);
+        user.setUserSetting(savedSetting);
         userRepository.save(user);
 
         mailVerificationService.removeAuthNumber(joinDTO.getEmail());
@@ -149,15 +158,8 @@ public class UserServiceImpl implements UserService {
             settingChanged = true;
         }
 
-        if (updateDTO.getTtsVoice() != null && !updateDTO.getTtsVoice().isEmpty()) {
-            userSetting.setTtsVoice(updateDTO.getTtsVoice());
-            userSetting.setTtsGender(null);
-            settingChanged = true;
-        }
-
-        else if (updateDTO.getTtsGender() != null) {
-            userSetting.setTtsGender(updateDTO.getTtsGender());
-            userSetting.setTtsVoice(null);
+        if (updateDTO.getTtsVoiceName() != null) {
+            userSetting.setTtsVoiceName(updateDTO.getTtsVoiceName());
             settingChanged = true;
         }
 

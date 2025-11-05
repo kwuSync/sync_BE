@@ -67,11 +67,9 @@ public class TTSService {
 		}
 
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
-
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
 			throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 		}
-		String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
 		return synthesize(summaryText, settingOpt);
 	}
 
@@ -84,24 +82,19 @@ public class TTSService {
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
 			voiceBuilder.setLanguageCode("ko-KR");
 
+			String voiceName = settingOpt.map(UserSetting::getTtsVoiceName).orElse(null);
 
-			String voiceName = settingOpt.map(UserSetting::getTtsVoice).orElse(null);
-			String gender = settingOpt.map(UserSetting::getTtsGender).orElse(null);
+			if ("MALE".equalsIgnoreCase(voiceName)) {
+				voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
+			}
+			else if ("FEMALE".equalsIgnoreCase(voiceName)) {
 
-			if (voiceName != null && !voiceName.isEmpty()) {
+				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
+			}
+			else if (voiceName != null && !voiceName.isEmpty()) {
 				voiceBuilder.setName(voiceName);
 			}
-			else if (gender != null && !gender.isEmpty()) {
-				if (gender.equalsIgnoreCase("MALE")) {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.MALE);
-				} else if (gender.equalsIgnoreCase("FEMALE")) {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
-				} else {
-					voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
-				}
-			}
 			else {
-				// 설정 없을 시 Female
 				voiceBuilder.setSsmlGender(SsmlVoiceGender.FEMALE);
 			}
 
