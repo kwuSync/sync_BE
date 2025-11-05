@@ -2,6 +2,7 @@ package com.sync_BE.service.TTSService;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -43,8 +44,14 @@ public class TTSService {
 		if (mainNewsList == null || mainNewsList.getNewsList() == null || mainNewsList.getNewsList().isEmpty()) {
 			throw new IOException("메인 요약 뉴스를 찾을 수 없습니다.");
 		}
-		NewsResponseDTO.NewsArticleDTO firstArticle = mainNewsList.getNewsList().get(0);
-		String summaryText = firstArticle.getSummaryText();
+		
+		String summaryText = mainNewsList.getNewsList().stream()
+				.map(NewsResponseDTO.NewsArticleDTO::getSummaryText)
+				.collect(Collectors.joining(". "));
+
+		if (summaryText.isEmpty()) {
+			throw new IOException("요약 텍스트가 비어있습니다.");
+		}
 
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 
