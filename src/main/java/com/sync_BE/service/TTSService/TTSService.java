@@ -48,7 +48,7 @@ public class TTSService {
 		}
 
 		List<String> summaryTexts = mainNewsList.getNewsList().stream()
-				.map(NewsResponseDTO.NewsArticleDTO::getSummaryText)
+				.map(article -> article.getTitle() + ". " + article.getSummaryText())
 				.filter(text -> text != null && !text.isEmpty())
 				.collect(Collectors.toList());
 
@@ -93,7 +93,9 @@ public class TTSService {
 		if (newsCluster == null || newsCluster.getSummary() == null || newsCluster.getSummary().getArticle() == null) { //
 			throw new IOException("요약된 뉴스를 찾을 수 없습니다.");
 		}
-		String summaryText = newsCluster.getSummary().getArticle();
+		String title = newsCluster.getGeneratedTitle();
+		String articleSummary = newsCluster.getSummary().getArticle();
+		String summaryText = title + ". " + articleSummary;
 
 		if (summaryText.isEmpty()) {
 			throw new IOException("요약 텍스트가 비어있습니다.");
