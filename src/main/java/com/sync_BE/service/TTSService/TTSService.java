@@ -48,7 +48,7 @@ public class TTSService {
 		}
 
 		List<String> summaryTexts = mainNewsList.getNewsList().stream()
-				.map(article -> article.getTitle() + ". " + article.getSummaryText()) // ⬅️ 여기 수정
+				.map(article -> article.getTitle() + ". " + article.getSummaryText())
 				.filter(text -> text != null && !text.isEmpty())
 				.collect(Collectors.toList());
 
