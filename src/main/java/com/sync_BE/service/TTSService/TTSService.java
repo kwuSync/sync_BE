@@ -5,13 +5,12 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.google.cloud.texttospeech.v1.AudioConfig;
-import com.google.cloud.texttospeech.v1.AudioEncoding;
-import com.google.cloud.texttospeech.v1.SsmlVoiceGender;
-import com.google.cloud.texttospeech.v1.SynthesisInput;
-import com.google.cloud.texttospeech.v1.SynthesizeSpeechResponse;
-import com.google.cloud.texttospeech.v1.TextToSpeechClient;
-import com.google.cloud.texttospeech.v1.VoiceSelectionParams;
+import com.google.cloud.texttospeech.v1beta1.AudioConfig;
+import com.google.cloud.texttospeech.v1beta1.AudioEncoding;
+import com.google.cloud.texttospeech.v1beta1.SynthesisInput;
+import com.google.cloud.texttospeech.v1beta1.SynthesizeSpeechResponse;
+import com.google.cloud.texttospeech.v1beta1.TextToSpeechClient;
+import com.google.cloud.texttospeech.v1beta1.VoiceSelectionParams;
 import com.google.protobuf.ByteString;
 import com.sync_BE.domain.UserSetting;
 import com.sync_BE.repository.UserSettingRepository;
@@ -79,8 +78,8 @@ public class TTSService {
 	private byte[] synthesize(String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
 		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
 			SynthesisInput input = SynthesisInput.newBuilder()
-				.setText(text)
-				.build();
+					.setText(text)
+					.build();
 
 			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
 			voiceBuilder.setLanguageCode("ko-KR");
@@ -90,21 +89,27 @@ public class TTSService {
 			if (ttsRequestDTO != null && ttsRequestDTO.getVoiceName() != null && !ttsRequestDTO.getVoiceName().isEmpty()) {
 				effectiveVoiceName = ttsRequestDTO.getVoiceName();
 			}
-
 			else if (settingOpt.isPresent() && settingOpt.get().getTtsVoiceName() != null) {
 				effectiveVoiceName = settingOpt.get().getTtsVoiceName();
 			}
-
 			else {
 				effectiveVoiceName = "FEMALE";
 			}
 
+			String modelName = "gemini-2.5-pro-tts";
+
 			if ("MALE".equalsIgnoreCase(effectiveVoiceName)) {
 				voiceBuilder.setName("Alnilam");
+				voiceBuilder.setModelName(modelName);
 			} else if ("FEMALE".equalsIgnoreCase(effectiveVoiceName)) {
 				voiceBuilder.setName("Achernar");
+				voiceBuilder.setModelName(modelName);
+			} else if (effectiveVoiceName.equals("Alnilam") || effectiveVoiceName.equals("Achernar")) {
+				// 사용자가 "Alnilam" 또는 "Achernar"를 직접 보낸 경우
+				voiceBuilder.setName(effectiveVoiceName);
+				voiceBuilder.setModelName(modelName);
 			} else {
-				// 특정 이름을 직접 지정한 경우
+				// "ko-KR-Wavenet-A" 등 다른 음성을 지정한 경우 (이 경우 modelName 불필요)
 				voiceBuilder.setName(effectiveVoiceName);
 			}
 
