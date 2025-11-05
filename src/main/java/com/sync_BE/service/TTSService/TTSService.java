@@ -64,9 +64,11 @@ public class TTSService {
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-		for (String text : summaryTexts) {
-			byte[] audioChunk = synthesize(text, settingOpt, ttsRequestDTO);
-			outputStream.write(audioChunk);
+		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
+			for (String text : summaryTexts) {
+				byte[] audioChunk = synthesize(textToSpeechClient, text, settingOpt, ttsRequestDTO);
+				outputStream.write(audioChunk);
+			}
 		}
 
 		return outputStream.toByteArray();
@@ -89,78 +91,77 @@ public class TTSService {
 				throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 			}
 		}
-		return synthesize(summaryText, settingOpt, ttsRequestDTO);
-	}
-
-	private byte[] synthesize(String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
 		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
-			SynthesisInput input = SynthesisInput.newBuilder()
-					.setText(text)
-					.build();
-
-			VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
-			voiceBuilder.setLanguageCode("ko-KR");
-
-			String effectiveVoiceName = null;
-
-			if (ttsRequestDTO != null && ttsRequestDTO.getVoiceName() != null && !ttsRequestDTO.getVoiceName().isEmpty()) {
-				effectiveVoiceName = ttsRequestDTO.getVoiceName();
-			}
-			else if (settingOpt.isPresent() && settingOpt.get().getTtsVoiceName() != null) {
-				effectiveVoiceName = settingOpt.get().getTtsVoiceName();
-			}
-			else {
-				effectiveVoiceName = "FEMALE";
-			}
-
-			String modelName = "gemini-2.5-pro-tts";
-
-			if ("MALE".equalsIgnoreCase(effectiveVoiceName)) {
-				voiceBuilder.setName("Alnilam");
-				voiceBuilder.setModelName(modelName);
-			} else if ("FEMALE".equalsIgnoreCase(effectiveVoiceName)) {
-				voiceBuilder.setName("Achernar");
-				voiceBuilder.setModelName(modelName);
-			} else if (effectiveVoiceName.equals("Alnilam") || effectiveVoiceName.equals("Achernar")) {
-				// 사용자가 "Alnilam" 또는 "Achernar"를 직접 보낸 경우
-				voiceBuilder.setName(effectiveVoiceName);
-				voiceBuilder.setModelName(modelName);
-			} else {
-				// "ko-KR-Wavenet-A" 등 다른 음성을 지정한 경우 (이 경우 modelName 불필요)
-				voiceBuilder.setName(effectiveVoiceName);
-			}
-
-			VoiceSelectionParams voice = voiceBuilder.build();
-
-			AudioConfig.Builder audioBuilder = AudioConfig.newBuilder()
-				.setAudioEncoding(AudioEncoding.MP3);
-
-			Double pitch = null;
-			if (ttsRequestDTO != null && ttsRequestDTO.getPitch() != null) {
-				pitch = ttsRequestDTO.getPitch();
-			} else if (settingOpt.isPresent()) {
-				pitch = settingOpt.get().getPitch();
-			}
-			if (pitch != null) {
-				audioBuilder.setPitch(pitch);
-			}
-
-			Double speakingRate = null;
-			if (ttsRequestDTO != null && ttsRequestDTO.getSpeakingRate() != null) {
-				speakingRate = ttsRequestDTO.getSpeakingRate();
-			} else if (settingOpt.isPresent()) {
-				speakingRate = settingOpt.get().getSpeakingRate();
-			}
-
-			if (speakingRate != null) {
-				audioBuilder.setSpeakingRate(speakingRate);
-			}
-
-			AudioConfig audioConfig = audioBuilder.build();
-
-			SynthesizeSpeechResponse response = textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
-			ByteString audioContents = response.getAudioContent();
-			return audioContents.toByteArray();
+			return synthesize(textToSpeechClient, summaryText, settingOpt, ttsRequestDTO);
 		}
 	}
+
+	private byte[] synthesize(TextToSpeechClient textToSpeechClient, String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
+		SynthesisInput input = SynthesisInput.newBuilder()
+				.setText(text)
+				.build();
+
+		VoiceSelectionParams.Builder voiceBuilder = VoiceSelectionParams.newBuilder();
+		voiceBuilder.setLanguageCode("ko-KR");
+
+		String effectiveVoiceName = null;
+
+		if (ttsRequestDTO != null && ttsRequestDTO.getVoiceName() != null && !ttsRequestDTO.getVoiceName().isEmpty()) {
+			effectiveVoiceName = ttsRequestDTO.getVoiceName();
+		}
+		else if (settingOpt.isPresent() && settingOpt.get().getTtsVoiceName() != null) {
+			effectiveVoiceName = settingOpt.get().getTtsVoiceName();
+		}
+		else {
+			effectiveVoiceName = "FEMALE";
+		}
+
+		String modelName = "gemini-2.5-pro-tts";
+
+		if ("MALE".equalsIgnoreCase(effectiveVoiceName)) {
+			voiceBuilder.setName("Alnilam");
+			voiceBuilder.setModelName(modelName);
+		} else if ("FEMALE".equalsIgnoreCase(effectiveVoiceName)) {
+			voiceBuilder.setName("Achernar");
+			voiceBuilder.setModelName(modelName);
+		} else if (effectiveVoiceName.equals("Alnilam") || effectiveVoiceName.equals("Achernar")) {
+			voiceBuilder.setName(effectiveVoiceName);
+			voiceBuilder.setModelName(modelName);
+		} else {
+			voiceBuilder.setName(effectiveVoiceName);
+		}
+
+		VoiceSelectionParams voice = voiceBuilder.build();
+
+		AudioConfig.Builder audioBuilder = AudioConfig.newBuilder()
+				.setAudioEncoding(AudioEncoding.MP3);
+
+		Double pitch = null;
+		if (ttsRequestDTO != null && ttsRequestDTO.getPitch() != null) {
+			pitch = ttsRequestDTO.getPitch();
+		} else if (settingOpt.isPresent()) {
+			pitch = settingOpt.get().getPitch();
+		}
+		if (pitch != null) {
+			audioBuilder.setPitch(pitch);
+		}
+
+		Double speakingRate = null;
+		if (ttsRequestDTO != null && ttsRequestDTO.getSpeakingRate() != null) {
+			speakingRate = ttsRequestDTO.getSpeakingRate();
+		} else if (settingOpt.isPresent()) {
+			speakingRate = settingOpt.get().getSpeakingRate();
+		}
+
+		if (speakingRate != null) {
+			audioBuilder.setSpeakingRate(speakingRate);
+		}
+
+		AudioConfig audioConfig = audioBuilder.build();
+
+		SynthesizeSpeechResponse response = textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
+		ByteString audioContents = response.getAudioContent();
+		return audioContents.toByteArray();
+	}
 }
+
