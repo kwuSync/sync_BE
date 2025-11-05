@@ -65,9 +65,23 @@ public class TTSService {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
 		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
-			for (String text : summaryTexts) {
-				byte[] audioChunk = synthesize(textToSpeechClient, text, settingOpt, ttsRequestDTO);
-				outputStream.write(audioChunk);
+			List<byte[]> audioChunks = summaryTexts.parallelStream().map(text -> {
+				try {
+					return synthesize(textToSpeechClient, text, settingOpt, ttsRequestDTO);
+				} catch (IOException e) {
+					throw new RuntimeException("TTS synthesis failed for a chunk", e);
+				}
+			}).collect(Collectors.toList());
+
+			for (byte[] chunk : audioChunks) {
+				outputStream.write(chunk);
+			}
+
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof IOException) {
+				throw (IOException) e.getCause();
+			} else {
+				throw new IOException("Failed during parallel TTS synthesis", e);
 			}
 		}
 
