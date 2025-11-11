@@ -1,4 +1,4 @@
-package com.sync_BE.web.dto;
+package com.sync_BE.web.dto.userDTO;
 
 import lombok.Builder;
 import lombok.Getter;
