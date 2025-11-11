@@ -1,4 +1,3 @@
-# 1
 FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /app
 
@@ -9,7 +8,6 @@ RUN gradle dependencies --no-daemon || true
 COPY . .
 RUN gradle clean build -x test --no-daemon
 
-# 2
 FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /app
 
