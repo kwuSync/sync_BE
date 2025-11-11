@@ -22,4 +22,4 @@ EXPOSE 8080
 
 ENV JAVA_OPTS="-Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxMetaspaceSize=128m"
 
-ENTRYPOINT ["java", "-jar", "./build/libs/sync_BE-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["/bin/sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]
