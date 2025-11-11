@@ -42,14 +42,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Make application.properties
-        if: github.event_name == 'push'
-        run: |
-          mkdir -p ./src/main/resources
-          cd ./src/main/resources
-          touch ./application.properties
-          echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./application.properties
-        shell: bash
+      #- name: Make application.properties
+      #  if: github.event_name == 'push'
+      #  run: |
+      #    mkdir -p ./src/main/resources
+      #    cd ./src/main/resources
+      #    touch ./application.properties
+      #    echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./application.properties
+      #  shell: bash
 
       - name: Make dummy application.properties for PR
         if: github.event_name == 'pull_request'
