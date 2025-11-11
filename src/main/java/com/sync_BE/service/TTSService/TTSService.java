@@ -2,10 +2,14 @@ package com.sync_BE.service.TTSService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.google.cloud.texttospeech.v1beta1.AudioConfig;
@@ -27,10 +31,17 @@ public class TTSService {
 
 	private final NewsService newsService;
 	private final UserSettingRepository userSettingRepository;
+	private final TextToSpeechClient textToSpeechClient;
+	private final Executor ttsExecutor;
 
-	public TTSService(NewsService newsService, UserSettingRepository userSettingRepository) {
+	public TTSService(NewsService newsService,
+					  UserSettingRepository userSettingRepository,
+					  TextToSpeechClient textToSpeechClient,
+					  @Qualifier("ttsExecutor") Executor ttsExecutor) {
 		this.newsService = newsService;
 		this.userSettingRepository = userSettingRepository;
+		this.textToSpeechClient = textToSpeechClient;
+		this.ttsExecutor = ttsExecutor;
 	}
 
 	private Optional<UserSetting> getUserSetting(CustomUserDetails userDetails) {
@@ -64,17 +75,21 @@ public class TTSService {
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
-			List<byte[]> audioChunks = summaryTexts.parallelStream().map(text -> {
-				try {
-					return synthesize(textToSpeechClient, text, settingOpt, ttsRequestDTO);
-				} catch (IOException e) {
-					throw new RuntimeException("TTS synthesis failed for a chunk", e);
-				}
-			}).collect(Collectors.toList());
+		try {
+			List<CompletableFuture<byte[]>> futures = summaryTexts.stream()
+					.map(text -> CompletableFuture.supplyAsync(() -> {
+						try {
+							return synthesize(text, settingOpt, ttsRequestDTO);
+						} catch (IOException e) {
+							throw new RuntimeException("TTS synthesis failed for a chunk", e);
+						}
+					}, ttsExecutor))
+					.collect(Collectors.toList());
 
-			for (byte[] chunk : audioChunks) {
-				outputStream.write(chunk);
+			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+			for (CompletableFuture<byte[]> future : futures) {
+				outputStream.write(future.join());
 			}
 
 		} catch (RuntimeException e) {
@@ -90,7 +105,7 @@ public class TTSService {
 
 	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails userDetails, TTSRequestDTO ttsRequestDTO) throws IOException {
 		NewsResponseDTO.NewsClusterDTO newsCluster = newsService.getNewsSummaryByClusterId(clusterId);
-		if (newsCluster == null || newsCluster.getSummary() == null || newsCluster.getSummary().getArticle() == null) { //
+		if (newsCluster == null || newsCluster.getSummary() == null || newsCluster.getSummary().getArticle() == null) {
 			throw new IOException("요약된 뉴스를 찾을 수 없습니다.");
 		}
 		String summaryText = newsCluster.getSummary().getArticle();
@@ -99,18 +114,48 @@ public class TTSService {
 			throw new IOException("요약 텍스트가 비어있습니다.");
 		}
 
+		List<String> textChunks = Arrays.asList(summaryText.split("\n"))
+				.stream()
+				.filter(s -> !s.trim().isEmpty())
+				.collect(Collectors.toList());
+
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
 			if (ttsRequestDTO == null) {
 				throw new IOException("사용자가 TTS 기능을 비활성화했습니다.");
 			}
 		}
-		try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
-			return synthesize(textToSpeechClient, summaryText, settingOpt, ttsRequestDTO);
+
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try {
+			List<CompletableFuture<byte[]>> futures = textChunks.stream()
+					.map(text -> CompletableFuture.supplyAsync(() -> {
+						try {
+							return synthesize(text, settingOpt, ttsRequestDTO);
+						} catch (IOException e) {
+							throw new RuntimeException("TTS synthesis failed for a chunk", e);
+						}
+					}, ttsExecutor))
+					.collect(Collectors.toList());
+
+			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+			for (CompletableFuture<byte[]> future : futures) {
+				outputStream.write(future.join());
+			}
+
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof IOException) {
+				throw (IOException) e.getCause();
+			} else {
+				throw new IOException("Failed during parallel TTS synthesis", e);
+			}
 		}
+
+		return outputStream.toByteArray();
 	}
 
-	private byte[] synthesize(TextToSpeechClient textToSpeechClient, String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
+	private byte[] synthesize(String text, Optional<UserSetting> settingOpt, TTSRequestDTO ttsRequestDTO) throws IOException {
 		SynthesisInput input = SynthesisInput.newBuilder()
 				.setText(text)
 				.build();
@@ -173,7 +218,7 @@ public class TTSService {
 
 		AudioConfig audioConfig = audioBuilder.build();
 
-		SynthesizeSpeechResponse response = textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
+		SynthesizeSpeechResponse response = this.textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
 		ByteString audioContents = response.getAudioContent();
 		return audioContents.toByteArray();
 	}
