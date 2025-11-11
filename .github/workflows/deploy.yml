@@ -122,9 +122,8 @@ jobs:
           EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
           TTS_KEY: ${{ secrets.TTS_KEY }}
         run: |
-          run: |
-            echo "MONGO_URI length: ${#MONGO_URI}"
-            echo "MONGO_URI: $MONGO_URI"
+          echo "MONGO_URI length: ${#MONGO_URI}"
+          echo "MONGO_URI: $MONGO_URI"
           
           if [[ "$GIT_BRANCH_REF" == "refs/heads/main" ]]; then
             CONTAINER_NAME="sync-prod"
@@ -134,7 +133,7 @@ jobs:
             PORT="8081"
           fi
 
-          COMMANDS_STRING=$(cat <<EOF
+          COMMANDS_STRING=$(cat <<'EOFCMD'
           echo "$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json && \
           
           
