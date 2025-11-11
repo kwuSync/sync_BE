@@ -1,13 +1,25 @@
-FROM eclipse-temurin:17-jdk-jammy
-
+FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /app
+
+COPY gradlew .
+COPY gradle gradle
+RUN chmod +x ./gradlew
+
+COPY build.gradle settings.gradle ./
+
+RUN ./gradlew dependencies --no-daemon || true
 
 COPY . .
 
-RUN chmod +x ./gradlew
+RUN ./gradlew clean build -x test --no-daemon
 
-RUN ./gradlew build -x test
+FROM eclipse-temurin:17-jdk-jammy
+WORKDIR /app
+
+COPY --from=builder /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
+
+ENV JAVA_OPTS="-Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxMetaspaceSize=128m"
 
 ENTRYPOINT ["java", "-jar", "./build/libs/sync_BE-0.0.1-SNAPSHOT.jar"]
