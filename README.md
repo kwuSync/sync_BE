@@ -11,7 +11,7 @@ newsync.kr
 
 feat : 기능
 
-fix : 버그 수정
+fix : 버그 수정 
 
 docs : 문서 작업
 
