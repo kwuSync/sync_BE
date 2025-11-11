@@ -147,30 +147,25 @@ jobs:
             PORT="8081"
           fi
 
-          COMMANDS_STRING=$(cat <<EOFCMD
-          echo \"$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json && \
-          
-          
-          sudo docker pull $IMAGE_NAME && \
-          (sudo docker stop $CONTAINER_NAME || true) && \
-          (sudo docker rm $CONTAINER_NAME || true) && \
-          
-          
+          COMMANDS_STRING=$(cat <<EOF
+          echo "$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json
+          sudo docker pull $IMAGE_NAME
+          (sudo docker stop $CONTAINER_NAME || true)
+          (sudo docker rm $CONTAINER_NAME || true)
           sudo docker run -d -p $PORT:8080 --name $CONTAINER_NAME \
           -v /tmp/google-tts-key.json:/app/google-tts-key.json \
-          -e MONGO_URI='$MONGO_URI' \
-          -e JWT_SECRET='$JWT_SECRET' \
-          -e MAIL_PASSWORD='$MAIL_PASSWORD' \
-          -e REDIS_HOST='$REDIS_HOST' \
+          -e MONGO_URI="$MONGO_URI" \
+          -e JWT_SECRET="$JWT_SECRET" \
+          -e MAIL_PASSWORD="$MAIL_PASSWORD" \
+          -e REDIS_HOST="$REDIS_HOST" \
           -e SERVER_SERVLET_CONTEXT_PATH='/api' \
           -e GOOGLE_APPLICATION_CREDENTIALS='/app/google-tts-key.json' \
-          $IMAGE_NAME && \
-          
+          $IMAGE_NAME
           sudo docker image prune -f
-          EOFCMD
+          EOF
           )
           
-          JSON_PAYLOAD=$(echo "$COMMANDS_STRING" | jq -R -s '{ "commands": [.] }')
+          JSON_PAYLOAD=$(echo "$COMMANDS_STRING" | jq -R . | jq -s '{ "commands": . }')
           
           echo "Sending command to EC2 instance..."
           COMMAND_ID=$(aws ssm send-command \
