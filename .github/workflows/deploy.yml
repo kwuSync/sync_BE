@@ -111,6 +111,20 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Check TTS_KEY content
+        run: |
+          echo "--- Diagnosing TTS_KEY ---"
+          FIRST_10_CHARS=$(echo "${{ secrets.TTS_KEY }}" | cut -c 1-10)
+          echo "First 10 chars of TTS_KEY: $FIRST_10_CHARS"
+          if [[ "$FIRST_10_CHARS" == "ewogICJ0eX" ]]; then
+            echo "✅ TTS_KEY seems to be Base64."
+          else
+            echo "❌ ERROR: TTS_KEY is NOT Base64. It probably starts with '{ \"type\":'. Please fix the secret."              
+            echo "Job failed because TTS_KEY is incorrect."
+            exit 1
+          fi
+          echo "--- End of diagnosis ---"
+
       - name: Deploy to Server via AWS SSM
         env:
           IMAGE_NAME: ${{ steps.image.outputs.name }}
