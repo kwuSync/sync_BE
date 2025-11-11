@@ -16,20 +16,7 @@ import java.util.concurrent.Executor;
 public class TTSConfig {
     @Bean
     public TextToSpeechClient textToSpeechClient() throws IOException {
-        String keyFileName = "key-scarab-475015-m5-aa1891b2451b.json";
-
-        ClassPathResource resource = new ClassPathResource(keyFileName);
-
-        GoogleCredentials credentials;
-        try (InputStream credentialsStream = resource.getInputStream()) {
-            credentials = GoogleCredentials.fromStream(credentialsStream);
-        }
-
-        TextToSpeechSettings settings = TextToSpeechSettings.newBuilder()
-                .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
-                .build();
-
-        return TextToSpeechClient.create(settings);
+        return TextToSpeechClient.create();
     }
 
     @Bean(name="ttsExecutor")
