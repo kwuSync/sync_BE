@@ -1,18 +1,22 @@
 FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /app
 
-COPY build.gradle settings.gradle ./
+COPY gradlew .
 COPY gradle gradle
-RUN gradle dependencies --no-daemon || true
+RUN chmod +x ./gradlew
+
+COPY build.gradle settings.gradle ./
+
+RUN ./gradlew dependencies --no-daemon || true
 
 COPY . .
-RUN gradle clean build -x test --no-daemon
+
+RUN ./gradlew clean build -x test --no-daemon
 
 FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /app
 
 COPY --from=builder /app/build/libs/*.jar app.jar
-# RUN ./gradlew build -x test
 
 EXPOSE 8080
 
