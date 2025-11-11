@@ -133,8 +133,8 @@ jobs:
             PORT="8081"
           fi
 
-          COMMANDS_STRING=$(cat <<'EOFCMD'
-          echo "$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json && \
+          COMMANDS_STRING=$(cat <<EOFCMD
+          echo \"$TTS_KEY" | base64 --decode > /tmp/google-tts-key.json && \
           
           
           sudo docker pull $IMAGE_NAME && \
