@@ -53,6 +53,8 @@ public class UserServiceImpl implements UserService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        userRepository.save(user);
+
         UserSetting newUserSetting = UserSetting.builder()
             .user(user)
             .ttsEnabled(true)
