@@ -119,7 +119,8 @@ jobs:
           if [[ "$FIRST_10_CHARS" == "ewogICJ0eX" ]]; then
             echo "✅ TTS_KEY seems to be Base64."
           else
-            echo "❌ ERROR: TTS_KEY is NOT Base64. It probably starts with '{ \"type\":'. Please fix the secret."              echo "Job failed because TTS_KEY is incorrect."
+            echo "❌ ERROR: TTS_KEY is NOT Base64. It probably starts with '{ \"type\":'. Please fix the secret."              
+            echo "Job failed because TTS_KEY is incorrect."
             exit 1
           fi
           echo "--- End of diagnosis ---"
