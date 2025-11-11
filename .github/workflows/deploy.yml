@@ -156,7 +156,7 @@ jobs:
           EOFCMD
           )
           
-          JSON_PAYLOAD=$(jq -n --arg cmd "$COMMANDS_STRING" '{ "commands": [$cmd] }')
+          JSON_PAYLOAD=$(echo "$COMMANDS_STRING" | jq -R -s '{ "commands": [.] }')
           
           echo "Sending command to EC2 instance..."
           COMMAND_ID=$(aws ssm send-command \
