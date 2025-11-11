@@ -122,6 +122,10 @@ jobs:
           EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
           TTS_KEY: ${{ secrets.TTS_KEY }}
         run: |
+          run: |
+            echo "MONGO_URI length: ${#MONGO_URI}"
+            echo "MONGO_URI: $MONGO_URI"
+          
           if [[ "$GIT_BRANCH_REF" == "refs/heads/main" ]]; then
             CONTAINER_NAME="sync-prod"
             PORT="8080"
