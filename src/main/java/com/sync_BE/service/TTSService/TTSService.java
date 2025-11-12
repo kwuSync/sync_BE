@@ -98,7 +98,7 @@ public class TTSService {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
 		try {
-			List<CompletableFuture<byte[]>> futures = summaryTexts.stream()
+			List<CompletableFuture<byte[]>> futures = textChunks.stream()
 					.map(text -> CompletableFuture.supplyAsync(() -> {
 						try {
 							return synthesize(text, settingOpt, ttsRequestDTO);
