@@ -2,10 +2,7 @@ package com.sync_BE.service.NewsService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -160,50 +157,50 @@ public class NewsServiceImpl implements NewsService {
 	@Override
 	public NewsResponseDTO.NewsClusterDTO getNewsSummaryByClusterId(String clusterId) {
 		try {
-			log.info("##### 클러스터 ID로 뉴스 상세 조회 요청 시작: clusterId={} #####", clusterId);
-
 			String ragJsonPath = "cluster_" + clusterId + "_summary_rag.json";
 			String normalJsonPath = "cluster_" + clusterId + "_summary.json";
 
-			Resource resource;
-			if (new ClassPathResource(ragJsonPath).exists()) {
-				log.info("✅ RAG JSON 파일 발견: {}", ragJsonPath);
-				resource = new ClassPathResource(ragJsonPath);
-			} else {
-				log.info("⚠️ RAG JSON 파일이 없어 일반 summary.json으로 대체: {}", normalJsonPath);
-				resource = new ClassPathResource(normalJsonPath);
-			}
+			Resource resource = new ClassPathResource(ragJsonPath).exists()
+					? new ClassPathResource(ragJsonPath)
+					: new ClassPathResource(normalJsonPath);
 
 			String jsonContent = new String(resource.getInputStream().readAllBytes());
-			log.info("JSON 파일 내용 성공적으로 읽음. (처음 100자): {}",
-					jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
-
 			Map<String, Object> jsonMap = objectMapper.readValue(jsonContent, Map.class);
 
 			@SuppressWarnings("unchecked")
 			Map<String, Object> summaryMap = (Map<String, Object>) jsonMap.get("summary");
+			if (summaryMap == null) {
+				log.warn("⚠️ 'summary' 필드가 누락됨: clusterId={}", clusterId);
+				summaryMap = new HashMap<>();
+			}
 
 			NewsResponseDTO.Summary summary = NewsResponseDTO.Summary.builder()
-					.highlight((String) summaryMap.get("highlight"))
-					.article((String) summaryMap.get("article"))
-					.background((String) summaryMap.get("background"))
+					.highlight((String) summaryMap.getOrDefault("highlight", "요약 없음"))
+					.article((String) summaryMap.getOrDefault("article", "요약 없음"))
+					.background((String) summaryMap.getOrDefault("background", "배경 정보 없음"))
 					.build();
 
 			@SuppressWarnings("unchecked")
-			List<String> keywords = (List<String>) jsonMap.get("generated_keywords");
+			List<String> keywords = (List<String>) jsonMap.getOrDefault("generated_keywords", Collections.emptyList());
 
 			@SuppressWarnings("unchecked")
-			List<String> titles = (List<String>) jsonMap.get("titles");
+			List<String> titles = (List<String>) jsonMap.getOrDefault("titles", Collections.emptyList());
 
 			@SuppressWarnings("unchecked")
-			List<Integer> ids = ((List<Number>) jsonMap.get("ids")).stream()
-					.map(Number::intValue)
-					.collect(Collectors.toList());
+			List<Number> idsRaw = (List<Number>) jsonMap.get("ids");
+			List<Integer> ids = (idsRaw != null)
+					? idsRaw.stream().map(Number::intValue).collect(Collectors.toList())
+					: Collections.emptyList();
 
-			LocalDateTime timestamp = LocalDateTime.parse((String) jsonMap.get("timestamp"));
+			LocalDateTime timestamp;
+			try {
+				timestamp = LocalDateTime.parse((String) jsonMap.get("timestamp"));
+			} catch (Exception e) {
+				timestamp = LocalDateTime.now();
+			}
 
-			NewsResponseDTO.NewsClusterDTO newsClusterDTO = NewsResponseDTO.NewsClusterDTO.builder()
-					.generatedTitle((String) jsonMap.get("generated_title"))
+			return NewsResponseDTO.NewsClusterDTO.builder()
+					.generatedTitle((String) jsonMap.getOrDefault("generated_title", "제목 없음"))
 					.generatedKeywords(keywords)
 					.clusterId(clusterId)
 					.summary(summary)
@@ -211,17 +208,13 @@ public class NewsServiceImpl implements NewsService {
 					.ids(ids)
 					.timestamp(timestamp)
 					.build();
-			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####",
-					newsClusterDTO.getGeneratedTitle(), newsClusterDTO.getClusterId());
-
-			return newsClusterDTO;
 
 		} catch (IOException e) {
-			log.error("뉴스 상세 정보 조회 실패 (IO 오류): {}", e.getMessage(), e);
-			throw new RuntimeException("뉴스 상세 정보 로딩에 실패했습니다.", e);
+			log.error("뉴스 상세 정보 조회 실패 (IO): {}", e.getMessage(), e);
+			throw new RuntimeException("뉴스 상세 정보 로딩 실패", e);
 		} catch (Exception e) {
-			log.error("뉴스 상세 정보 조회 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
-			throw new RuntimeException("뉴스 상세 정보 조회 중 오류가 발생했습니다.", e);
+			log.error("뉴스 상세 정보 조회 중 오류: {}", e.getMessage(), e);
+			throw new RuntimeException("뉴스 상세 정보 조회 중 오류 발생", e);
 		}
 	}
 
