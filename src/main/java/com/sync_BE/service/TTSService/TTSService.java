@@ -187,4 +187,35 @@ public class TTSService {
 		}
 		throw new RuntimeException("TTS 재시도 초과 idx=" + idx);
 	}
+
+	public byte[] synthesizeDirectText(CustomUserDetails user, String text, TTSRequestDTO dto) throws IOException {
+		if (text == null || text.isBlank()) {
+			throw new IOException("TTS 텍스트가 비어 있습니다.");
+		}
+
+		String cleaned = preprocessTextForSpeech(text);
+
+		log.info("🗣️ 사용자 직접 전달 텍스트 기반 TTS (원본 {}자 → 정제 후 {}자)", text.length(), cleaned.length());
+		return synthesizeTexts(List.of(cleaned), user, dto);
+	}
+
+	private String preprocessTextForSpeech(String text) {
+		if (text == null) return "";
+
+		String cleaned = text;
+
+		cleaned = cleaned.replaceAll("\\\\n", ", ");
+		cleaned = cleaned.replaceAll("\\n", ", ");
+
+		cleaned = cleaned.replaceAll("(?i)요약\\s*내용\\s*[:：]", "");
+		cleaned = cleaned.replaceAll("뉴스\\s*\\d+\\s*\\.?", "");
+
+		cleaned = cleaned.replaceAll("[-•·]+\\s*", "");
+
+		cleaned = cleaned.replaceAll("\\s{2,}", " ").trim();
+
+		if (!cleaned.endsWith(".")) cleaned += ".";
+
+		return cleaned;
+	}
 }
