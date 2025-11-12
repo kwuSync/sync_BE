@@ -21,13 +21,19 @@ import java.util.stream.Collectors;
 @Service
 public class TTSService {
 
-	private static final int MAX_CONCURRENCY = 3;
-	private static final int MAX_CHUNK_LEN = 3000;
-	private static final String MODEL = "gemini-2.5-pro-tts";
+	private static final String CHIRP3_MODEL = "chirp-3";
+	private static final String CHIRP3_FALLBACK_MODEL = "chirp";
+
+
+	private static final int MAX_CONCURRENCY = 2;
+	private static final int MAX_CHUNK_LEN = 2800;
+	private static final int MAX_RETRY = 3;
+	private static final long BACKOFF_MS = 800L;
+
+	private final ExecutorService executor = Executors.newFixedThreadPool(MAX_CONCURRENCY);
 
 	private final NewsService newsService;
 	private final UserSettingRepository userSettingRepository;
-	private final ExecutorService executor = Executors.newFixedThreadPool(MAX_CONCURRENCY);
 
 	public TTSService(NewsService newsService, UserSettingRepository userSettingRepository) {
 		this.newsService = newsService;
@@ -127,28 +133,35 @@ public class TTSService {
 	}
 
 	private VoiceSelectionParams buildVoice(Optional<UserSetting> settingOpt, TTSRequestDTO dto) {
-		String voiceName = Optional.ofNullable(dto != null ? dto.getVoiceName() : null)
+		String raw = Optional.ofNullable(dto != null ? dto.getVoiceName() : null)
 				.or(() -> settingOpt.map(UserSetting::getTtsVoiceName))
 				.orElse("FEMALE");
 
-		String normalized = voiceName.trim().toUpperCase(Locale.ROOT);
-		String resolved;
+		String normalized = raw.trim().toUpperCase(Locale.ROOT);
 
-		switch(normalized) {
+		String resolvedName;
+		switch (normalized) {
 			case "MALE":
 			case "M":
 			case "남성":
-				resolved = "Alnilam";
+				resolvedName = "Alnilam";
+				break;
+			case "FEMALE":
+			case "F":
+			case "여성":
+				resolvedName = "Achernar";
 				break;
 			default:
-				resolved = "Achernar";
+				resolvedName = raw.trim();
 				break;
 		}
 
-		return VoiceSelectionParams.newBuilder()
+		VoiceSelectionParams.Builder vb = VoiceSelectionParams.newBuilder()
 				.setLanguageCode("ko-KR")
-				.setName(resolved)
-				.build();
+				.setName(resolvedName)
+				.setModelName(CHIRP3_MODEL);
+
+		return vb.build();
 	}
 
 	private AudioConfig buildAudio(Optional<UserSetting> settingOpt, TTSRequestDTO dto) {
