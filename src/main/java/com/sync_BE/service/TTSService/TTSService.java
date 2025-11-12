@@ -45,16 +45,33 @@ public class TTSService {
 				.filter(t -> t != null && !t.isBlank())
 				.collect(Collectors.toList());
 
-		int fromIndex = Math.max(0, (page - 1) * pageSize);
-		int toIndex = Math.min(fromIndex + pageSize, allTexts.size());
-		if (fromIndex >= allTexts.size()) {
-			throw new IOException("요청한 페이지의 기사가 없습니다. page=" + page);
-		}
+		int from = Math.max(0, (page - 1) * pageSize);
+		int to = Math.min(from + pageSize, allTexts.size());
+		if (from >= allTexts.size()) throw new IOException("요청한 페이지의 기사가 없습니다.");
 
-		List<String> pageTexts = allTexts.subList(fromIndex, toIndex);
-
-		log.info("🎧 TTS 요청: page={} (기사 {}~{})", page, fromIndex + 1, toIndex);
+		List<String> pageTexts = allTexts.subList(from, to);
+		log.info("🎧 TTS 요청: page={} (기사 {}~{})", page, from + 1, to);
 		return synthesizeTexts(pageTexts, user, dto);
+	}
+
+	public byte[] synthesizeDirectText(CustomUserDetails user, String fullText, TTSRequestDTO dto, int page, int pageSize) throws IOException {
+		if (fullText == null || fullText.isBlank()) throw new IOException("텍스트가 비어있습니다.");
+
+		String[] splitArticles = fullText.split("뉴스\\s*\\d+\\.?");
+
+		List<String> articles = Arrays.stream(splitArticles)
+				.map(String::trim)
+				.filter(t -> !t.isBlank())
+				.collect(Collectors.toList());
+
+		int from = Math.max(0, (page - 1) * pageSize);
+		int to = Math.min(from + pageSize, articles.size());
+		if (from >= articles.size()) throw new IOException("요청한 페이지의 뉴스가 없습니다.");
+
+		List<String> pageArticles = articles.subList(from, to);
+
+		log.info("🎧 직접 text 기반 TTS 요청: page={} (기사 {}~{})", page, from + 1, to);
+		return synthesizeTexts(pageArticles, user, dto);
 	}
 
 	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails user, TTSRequestDTO dto) throws IOException {
@@ -115,29 +132,22 @@ public class TTSService {
 				.orElse("FEMALE");
 
 		String normalized = voiceName.trim().toUpperCase(Locale.ROOT);
-		String resolvedVoiceName;
-		SsmlVoiceGender gender;
+		String resolved;
 
-		switch (normalized) {
+		switch(normalized) {
 			case "MALE":
 			case "M":
 			case "남성":
-				resolvedVoiceName = "ko-KR-Neural2-B";
-				gender = SsmlVoiceGender.MALE;
+				resolved = "Alnilam";
 				break;
-			case "FEMALE":
-			case "F":
-			case "여성":
 			default:
-				resolvedVoiceName = "ko-KR-Neural2-A";
-				gender = SsmlVoiceGender.FEMALE;
+				resolved = "Achernar";
 				break;
 		}
 
 		return VoiceSelectionParams.newBuilder()
 				.setLanguageCode("ko-KR")
-				.setName(resolvedVoiceName)
-				.setSsmlGender(gender)
+				.setName(resolved)
 				.build();
 	}
 
@@ -186,17 +196,6 @@ public class TTSService {
 			}
 		}
 		throw new RuntimeException("TTS 재시도 초과 idx=" + idx);
-	}
-
-	public byte[] synthesizeDirectText(CustomUserDetails user, String text, TTSRequestDTO dto) throws IOException {
-		if (text == null || text.isBlank()) {
-			throw new IOException("TTS 텍스트가 비어 있습니다.");
-		}
-
-		String cleaned = preprocessTextForSpeech(text);
-
-		log.info("🗣️ 사용자 직접 전달 텍스트 기반 TTS (원본 {}자 → 정제 후 {}자)", text.length(), cleaned.length());
-		return synthesizeTexts(List.of(cleaned), user, dto);
 	}
 
 	private String preprocessTextForSpeech(String text) {
