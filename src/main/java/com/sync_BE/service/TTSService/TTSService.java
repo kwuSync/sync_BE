@@ -114,27 +114,30 @@ public class TTSService {
 				.or(() -> settingOpt.map(UserSetting::getTtsVoiceName))
 				.orElse("FEMALE");
 
-		// 대소문자, 한국어 모두 처리
 		String normalized = voiceName.trim().toUpperCase(Locale.ROOT);
 		String resolvedVoiceName;
+		SsmlVoiceGender gender;
 
 		switch (normalized) {
 			case "MALE":
 			case "M":
 			case "남성":
-				resolvedVoiceName = "ko-KR-Neural2-B"; // ✅ 남성 음성
+				resolvedVoiceName = "ko-KR-Neural2-B";
+				gender = SsmlVoiceGender.MALE;
 				break;
 			case "FEMALE":
 			case "F":
 			case "여성":
 			default:
-				resolvedVoiceName = "ko-KR-Neural2-A"; // ✅ 여성 음성
+				resolvedVoiceName = "ko-KR-Neural2-A";
+				gender = SsmlVoiceGender.FEMALE;
 				break;
 		}
 
 		return VoiceSelectionParams.newBuilder()
 				.setLanguageCode("ko-KR")
 				.setName(resolvedVoiceName)
+				.setSsmlGender(gender) // ✅ 필수
 				.build();
 	}
 
