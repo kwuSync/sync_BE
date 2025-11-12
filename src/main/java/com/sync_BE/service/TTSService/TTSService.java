@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,20 @@ public class TTSService {
 		return userSettingRepository.findByUserId(userDetails.getUser().getId());
 	}
 
+	private List<String> splitTextIntoChunks(String text) {
+		if (text == null || text.trim().isEmpty()) {
+			return List.of();
+		}
+
+		return Arrays.stream(text.split("\n"))
+				.flatMap(paragraph ->
+						Arrays.stream(paragraph.split("(?<=[.!?])\\s+"))
+				)
+				.map(String::trim)
+				.filter(chunk -> !chunk.isEmpty())
+				.collect(Collectors.toList());
+	}
+
 	public byte[] synthesizeMainSummary(CustomUserDetails userDetails, TTSRequestDTO ttsRequestDTO) throws IOException {
 		NewsResponseDTO.NewsListDTO mainNewsList = newsService.getMain();
 
@@ -67,6 +82,13 @@ public class TTSService {
 			throw new IOException("요약 텍스트가 비어있습니다.");
 		}
 
+		String allText = String.join("\n", summaryTexts);
+		List<String> textChunks = splitTextIntoChunks(allText);
+
+		if (textChunks.isEmpty()) {
+			throw new IOException("변환할 유효한 텍스트 조각이 없습니다.");
+		}
+
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
@@ -81,6 +103,7 @@ public class TTSService {
 						try {
 							return synthesize(text, settingOpt, ttsRequestDTO);
 						} catch (IOException e) {
+							System.err.println("TTS 조각 변환 실패: " + e.getMessage() + " | TEXT: " + text.substring(0, Math.min(text.length(), 20)) + "...");
 							throw new RuntimeException("TTS synthesis failed for a chunk", e);
 						}
 					}, ttsExecutor))
@@ -114,10 +137,11 @@ public class TTSService {
 			throw new IOException("요약 텍스트가 비어있습니다.");
 		}
 
-		List<String> textChunks = Arrays.asList(summaryText.split("\n"))
-				.stream()
-				.filter(s -> !s.trim().isEmpty())
-				.collect(Collectors.toList());
+		List<String> textChunks = splitTextIntoChunks(summaryText);
+
+		if (textChunks.isEmpty()) {
+			throw new IOException("변환할 유효한 텍스트 조각이 없습니다.");
+		}
 
 		Optional<UserSetting> settingOpt = getUserSetting(userDetails);
 		if (settingOpt.isPresent() && !settingOpt.get().isTtsEnabled()) {
@@ -133,6 +157,7 @@ public class TTSService {
 						try {
 							return synthesize(text, settingOpt, ttsRequestDTO);
 						} catch (IOException e) {
+							System.err.println("TTS 조각 변환 실패: " + e.getMessage() + " | TEXT: " + text.substring(0, Math.min(text.length(), 20)) + "...");
 							throw new RuntimeException("TTS synthesis failed for a chunk", e);
 						}
 					}, ttsExecutor))
