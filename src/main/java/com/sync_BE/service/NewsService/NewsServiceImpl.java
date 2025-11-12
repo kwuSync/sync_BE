@@ -162,12 +162,21 @@ public class NewsServiceImpl implements NewsService {
 		try {
 			log.info("##### 클러스터 ID로 뉴스 상세 조회 요청 시작: clusterId={} #####", clusterId);
 
-			String jsonFile = "cluster_" + clusterId + "_summary.json";
-			log.info("관련 JSON 파일 경로: {}", jsonFile);
+			String ragJsonPath = "cluster_" + clusterId + "_summary_rag.json";
+			String normalJsonPath = "cluster_" + clusterId + "_summary.json";
 
-			Resource resource = new ClassPathResource(jsonFile);
+			Resource resource;
+			if (new ClassPathResource(ragJsonPath).exists()) {
+				log.info("✅ RAG JSON 파일 발견: {}", ragJsonPath);
+				resource = new ClassPathResource(ragJsonPath);
+			} else {
+				log.info("⚠️ RAG JSON 파일이 없어 일반 summary.json으로 대체: {}", normalJsonPath);
+				resource = new ClassPathResource(normalJsonPath);
+			}
+
 			String jsonContent = new String(resource.getInputStream().readAllBytes());
-			log.info("JSON 파일 내용 성공적으로 읽음. (처음 100자): {}", jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
+			log.info("JSON 파일 내용 성공적으로 읽음. (처음 100자): {}",
+					jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
 
 			Map<String, Object> jsonMap = objectMapper.readValue(jsonContent, Map.class);
 
@@ -179,8 +188,6 @@ public class NewsServiceImpl implements NewsService {
 					.article((String) summaryMap.get("article"))
 					.background((String) summaryMap.get("background"))
 					.build();
-			log.info("Summary DTO 생성 완료: Highlight={}, Article={}, Background={}",
-					summary.getHighlight(), summary.getArticle(), summary.getBackground());
 
 			@SuppressWarnings("unchecked")
 			List<String> keywords = (List<String>) jsonMap.get("generated_keywords");
@@ -204,18 +211,17 @@ public class NewsServiceImpl implements NewsService {
 					.ids(ids)
 					.timestamp(timestamp)
 					.build();
-			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####", newsClusterDTO.getGeneratedTitle(), newsClusterDTO.getClusterId());
+			log.info("##### NewsClusterDTO 생성 완료: Title=\"{}\", ClusterId={} #####",
+					newsClusterDTO.getGeneratedTitle(), newsClusterDTO.getClusterId());
+
 			return newsClusterDTO;
 
 		} catch (IOException e) {
 			log.error("뉴스 상세 정보 조회 실패 (IO 오류): {}", e.getMessage(), e);
 			throw new RuntimeException("뉴스 상세 정보 로딩에 실패했습니다.", e);
-		} catch (IllegalArgumentException e) {
-			log.error("뉴스 상세 정보 조회 실패 (잘못된 인자): {}", e.getMessage(), e);
-			throw e;
 		} catch (Exception e) {
 			log.error("뉴스 상세 정보 조회 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
-			throw new RuntimeException("뉴스 상세 정보 조회 중 예상치 못한 오류가 발생했습니다.", e);
+			throw new RuntimeException("뉴스 상세 정보 조회 중 오류가 발생했습니다.", e);
 		}
 	}
 
@@ -226,12 +232,20 @@ public class NewsServiceImpl implements NewsService {
 			NewsArticle article = newsArticleRepository.findById(new ObjectId(articleId))
 					.orElseThrow(() -> new IllegalArgumentException("기사를 찾을 수 없습니다."));
 			log.info("NewsArticle 조회 성공: ID={}, Title=\"{}\", ClusterId={}", article.getId(), article.getTitle(), article.getClusterId());
-
 			String clusterId = article.getClusterId();
-			String jsonFile = "cluster_" + clusterId + "_summary.json";
-			log.info("관련 JSON 파일 경로: {}", jsonFile);
 
-			Resource resource = new ClassPathResource(jsonFile);
+			String ragJsonPath = "cluster_" + clusterId + "_summary_rag.json";
+			String normalJsonPath = "cluster_" + clusterId + "_summary.json";
+
+			Resource resource;
+			if (new ClassPathResource(ragJsonPath).exists()) {
+				log.info("✅ RAG JSON 파일 발견: {}", ragJsonPath);
+				resource = new ClassPathResource(ragJsonPath);
+			} else {
+				log.info("⚠️ RAG JSON 파일이 없어 일반 summary.json으로 대체: {}", normalJsonPath);
+				resource = new ClassPathResource(normalJsonPath);
+			}
+
 			String jsonContent = new String(resource.getInputStream().readAllBytes());
 			log.info("JSON 파일 내용 성공적으로 읽음. (처음 100자): {}", jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
 
