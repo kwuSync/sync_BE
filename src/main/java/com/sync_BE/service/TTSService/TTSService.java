@@ -137,7 +137,7 @@ public class TTSService {
 		return VoiceSelectionParams.newBuilder()
 				.setLanguageCode("ko-KR")
 				.setName(resolvedVoiceName)
-				.setSsmlGender(gender) // ✅ 필수
+				.setSsmlGender(gender)
 				.build();
 	}
 
