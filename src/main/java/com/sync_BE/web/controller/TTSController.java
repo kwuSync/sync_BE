@@ -29,18 +29,22 @@ public class TTSController {
 	@PostMapping("/main/tts")
 	public ResponseEntity<byte[]> mainSummary(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
+			@RequestBody(required = false) TTSRequestDTO ttsRequestDTO,
+			@RequestParam(required = false) String text, 
 			@RequestParam(defaultValue = "1") int page,
-			@RequestParam(defaultValue = "5") int pageSize,
-			@RequestBody(required = false) TTSRequestDTO ttsRequestDTO
-	) throws IOException {
+			@RequestParam(defaultValue = "5") int pageSize) throws IOException {
 
-		byte[] audioContent = ttsService.synthesizeMainSummary(userDetails, ttsRequestDTO, page, pageSize);
+		byte[] audioContent;
+
+		if (text != null && !text.isBlank()) {
+			audioContent = ttsService.synthesizeDirectText(userDetails, text, ttsRequestDTO);
+		} else {
+			audioContent = ttsService.synthesizeMainSummary(userDetails, ttsRequestDTO, page, pageSize);
+		}
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.valueOf("audio/mpeg"));
-		headers.set("Content-Disposition", "inline; filename=\"main-summary-page" + page + ".mp3\"");
-		headers.setCacheControl("no-cache, no-store, must-revalidate");
-
+		headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
+		headers.set("Content-Disposition", "inline; filename=\"main-summary.mp3\"");
 		return ResponseEntity.ok().headers(headers).body(audioContent);
 	}
 
