@@ -30,21 +30,25 @@ public class TTSController {
 	public ResponseEntity<byte[]> mainSummary(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@RequestBody(required = false) TTSRequestDTO ttsRequestDTO,
-			@RequestParam(required = false) String text, 
+			@RequestParam(required = false) String text,
 			@RequestParam(defaultValue = "1") int page,
-			@RequestParam(defaultValue = "5") int pageSize) throws IOException {
+			@RequestParam(defaultValue = "5") int pageSize
+	) throws IOException {
 
 		byte[] audioContent;
 
 		if (text != null && !text.isBlank()) {
-			audioContent = ttsService.synthesizeDirectText(userDetails, text, ttsRequestDTO);
+			// ✅ 프론트에서 text 직접 전달한 경우
+			audioContent = ttsService.synthesizeDirectText(userDetails, text, ttsRequestDTO, page, pageSize);
 		} else {
+			// ✅ text가 없으면 뉴스 목록 기반으로 처리
 			audioContent = ttsService.synthesizeMainSummary(userDetails, ttsRequestDTO, page, pageSize);
 		}
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
-		headers.set("Content-Disposition", "inline; filename=\"main-summary.mp3\"");
+		headers.set("Content-Disposition", "inline; filename=\"main-summary-page" + page + ".mp3\"");
+
 		return ResponseEntity.ok().headers(headers).body(audioContent);
 	}
 
