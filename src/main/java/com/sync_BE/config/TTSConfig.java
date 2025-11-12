@@ -22,9 +22,9 @@ public class TTSConfig {
     @Bean(name="ttsExecutor")
     public Executor ttsExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(20);
-        executor.setMaxPoolSize(50);
-        executor.setQueueCapacity(200);
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(15);
+        executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("TTS-Async-");
         executor.initialize();
         return executor;
