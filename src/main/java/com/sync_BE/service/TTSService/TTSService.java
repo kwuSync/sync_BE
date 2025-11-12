@@ -21,17 +21,11 @@ import java.util.stream.Collectors;
 @Service
 public class TTSService {
 
-	private static final String CHIRP3_MODEL = "chirp-3";
-	private static final String CHIRP3_FALLBACK_MODEL = "chirp";
-
-
+	private static final String MODEL = "chirp-3";
 	private static final int MAX_CONCURRENCY = 2;
-	private static final int MAX_CHUNK_LEN = 2800;
-	private static final int MAX_RETRY = 3;
-	private static final long BACKOFF_MS = 800L;
+	private static final int MAX_CHUNK_LEN = 2500;
 
 	private final ExecutorService executor = Executors.newFixedThreadPool(MAX_CONCURRENCY);
-
 	private final NewsService newsService;
 	private final UserSettingRepository userSettingRepository;
 
@@ -42,66 +36,45 @@ public class TTSService {
 
 	public byte[] synthesizeMainSummary(CustomUserDetails user, TTSRequestDTO dto, int page, int pageSize) throws IOException {
 		var mainNews = newsService.getMain();
-		if (mainNews == null || mainNews.getNewsList().isEmpty()) {
+		if (mainNews == null || mainNews.getNewsList() == null || mainNews.getNewsList().isEmpty()) {
 			throw new IOException("요약 뉴스가 없습니다.");
 		}
 
-		List<String> allTexts = mainNews.getNewsList().stream()
+		List<String> texts = mainNews.getNewsList().stream()
 				.map(NewsResponseDTO.NewsArticleDTO::getSummaryText)
-				.filter(t -> t != null && !t.isBlank())
+				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
 		int from = Math.max(0, (page - 1) * pageSize);
-		int to = Math.min(from + pageSize, allTexts.size());
-		if (from >= allTexts.size()) throw new IOException("요청한 페이지의 기사가 없습니다.");
+		int to = Math.min(from + pageSize, texts.size());
+		if (from >= texts.size()) throw new IOException("요청한 페이지의 기사가 없습니다.");
 
-		List<String> pageTexts = allTexts.subList(from, to);
+		List<String> pageTexts = texts.subList(from, to);
 		log.info("🎧 TTS 요청: page={} (기사 {}~{})", page, from + 1, to);
+
 		return synthesizeTexts(pageTexts, user, dto);
-	}
-
-	public byte[] synthesizeDirectText(CustomUserDetails user, String fullText, TTSRequestDTO dto, int page, int pageSize) throws IOException {
-		if (fullText == null || fullText.isBlank()) throw new IOException("텍스트가 비어있습니다.");
-
-		String[] splitArticles = fullText.split("뉴스\\s*\\d+\\.?");
-
-		List<String> articles = Arrays.stream(splitArticles)
-				.map(String::trim)
-				.filter(t -> !t.isBlank())
-				.collect(Collectors.toList());
-
-		int from = Math.max(0, (page - 1) * pageSize);
-		int to = Math.min(from + pageSize, articles.size());
-		if (from >= articles.size()) throw new IOException("요청한 페이지의 뉴스가 없습니다.");
-
-		List<String> pageArticles = articles.subList(from, to);
-
-		log.info("🎧 직접 text 기반 TTS 요청: page={} (기사 {}~{})", page, from + 1, to);
-		return synthesizeTexts(pageArticles, user, dto);
 	}
 
 	public byte[] synthesizeNewsSummary(String clusterId, CustomUserDetails user, TTSRequestDTO dto) throws IOException {
 		var cluster = newsService.getNewsSummaryByClusterId(clusterId);
-		if (cluster == null || cluster.getSummary() == null) {
-			throw new IOException("클러스터 요약을 찾을 수 없습니다.");
-		}
-
-		String article = cluster.getSummary().getArticle();
-		return synthesizeTexts(List.of(article), user, dto);
+		if (cluster == null || cluster.getSummary() == null) throw new IOException("클러스터 요약을 찾을 수 없습니다.");
+		return synthesizeTexts(List.of(cluster.getSummary().getArticle()), user, dto);
 	}
 
 	private byte[] synthesizeTexts(List<String> texts, CustomUserDetails user, TTSRequestDTO dto) throws IOException {
 		Optional<UserSetting> settingOpt = getUserSetting(user);
-		List<String> chunks = splitIntoChunks(texts);
+		List<String> chunks = splitIntoChunks(
+				texts.stream().map(this::cleanText).collect(Collectors.toList())
+		);
 
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		Semaphore limiter = new Semaphore(MAX_CONCURRENCY);
 
-		List<CompletableFuture<Void>> tasks = new ArrayList<>();
+		List<CompletableFuture<Void>> futures = new ArrayList<>();
 		for (int i = 0; i < chunks.size(); i++) {
-			final String text = chunks.get(i);
 			final int idx = i;
-			tasks.add(CompletableFuture.runAsync(() -> {
+			final String text = chunks.get(i);
+			futures.add(CompletableFuture.runAsync(() -> {
 				try {
 					limiter.acquire();
 					byte[] bytes = callWithRetry(() -> synthesizeOne(text, settingOpt, dto), idx);
@@ -116,60 +89,45 @@ public class TTSService {
 			}, executor));
 		}
 
-		CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+		CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 		return output.toByteArray();
 	}
 
 	private byte[] synthesizeOne(String text, Optional<UserSetting> settingOpt, TTSRequestDTO dto) throws IOException {
 		SynthesisInput input = SynthesisInput.newBuilder().setText(text).build();
 		VoiceSelectionParams voice = buildVoice(settingOpt, dto);
-		AudioConfig config = buildAudio(settingOpt, dto);
+		AudioConfig audio = buildAudio(settingOpt, dto);
 
 		try (TextToSpeechClient client = TextToSpeechClient.create()) {
-			SynthesizeSpeechResponse response = client.synthesizeSpeech(input, voice, config);
-			ByteString audio = response.getAudioContent();
-			return audio.toByteArray();
+			SynthesizeSpeechResponse res = client.synthesizeSpeech(input, voice, audio);
+			ByteString audioContents = res.getAudioContent();
+			return audioContents.toByteArray();
 		}
 	}
 
 	private VoiceSelectionParams buildVoice(Optional<UserSetting> settingOpt, TTSRequestDTO dto) {
-		String raw = Optional.ofNullable(dto != null ? dto.getVoiceName() : null)
+		String gender = Optional.ofNullable(dto != null ? dto.getVoiceName() : null)
 				.or(() -> settingOpt.map(UserSetting::getTtsVoiceName))
-				.orElse("FEMALE");
+				.orElse("female")
+				.trim()
+				.toLowerCase(Locale.ROOT);
 
-		String normalized = raw.trim().toUpperCase(Locale.ROOT);
+		String voiceName = gender.equals("male") || gender.equals("남성")
+				? "ko-KR-Standard-D"
+				: "ko-KR-Standard-A";
 
-		String resolvedName;
-		switch (normalized) {
-			case "MALE":
-			case "M":
-			case "남성":
-				resolvedName = "Alnilam";
-				break;
-			case "FEMALE":
-			case "F":
-			case "여성":
-				resolvedName = "Achernar";
-				break;
-			default:
-				resolvedName = raw.trim();
-				break;
-		}
-
-		VoiceSelectionParams.Builder vb = VoiceSelectionParams.newBuilder()
+		return VoiceSelectionParams.newBuilder()
 				.setLanguageCode("ko-KR")
-				.setName(resolvedName)
-				.setModelName(CHIRP3_MODEL);
-
-		return vb.build();
+				.setName(voiceName)
+				.setModelName(MODEL)
+				.build();
 	}
 
 	private AudioConfig buildAudio(Optional<UserSetting> settingOpt, TTSRequestDTO dto) {
-		Double pitch = Optional.ofNullable(dto != null ? dto.getPitch() : null)
+		double pitch = Optional.ofNullable(dto != null ? dto.getPitch() : null)
 				.or(() -> settingOpt.map(UserSetting::getPitch))
 				.orElse(0.0);
-
-		Double rate = Optional.ofNullable(dto != null ? dto.getSpeakingRate() : null)
+		double rate = Optional.ofNullable(dto != null ? dto.getSpeakingRate() : null)
 				.or(() -> settingOpt.map(UserSetting::getSpeakingRate))
 				.orElse(1.0);
 
@@ -181,13 +139,14 @@ public class TTSService {
 	}
 
 	private List<String> splitIntoChunks(List<String> texts) {
-		List<String> chunks = new ArrayList<>();
+		List<String> result = new ArrayList<>();
 		for (String text : texts) {
-			if (text.length() <= MAX_CHUNK_LEN) chunks.add(text);
+			if (text == null) continue;
+			if (text.length() <= MAX_CHUNK_LEN) result.add(text);
 			else for (int i = 0; i < text.length(); i += MAX_CHUNK_LEN)
-				chunks.add(text.substring(i, Math.min(text.length(), i + MAX_CHUNK_LEN)));
+				result.add(text.substring(i, Math.min(text.length(), i + MAX_CHUNK_LEN)));
 		}
-		return chunks;
+		return result;
 	}
 
 	private Optional<UserSetting> getUserSetting(CustomUserDetails user) {
@@ -197,37 +156,23 @@ public class TTSService {
 
 	private byte[] callWithRetry(Callable<byte[]> fn, int idx) {
 		int retry = 3;
-		long wait = 800L;
 		for (int i = 0; i < retry; i++) {
 			try {
 				return fn.call();
 			} catch (Exception e) {
 				log.warn("⚠️ 재시도 {}/{} idx={}, msg={}", i + 1, retry, idx, e.getMessage());
-				try {
-					Thread.sleep(wait);
-				} catch (InterruptedException ignored) {}
+				try { Thread.sleep(700L * (i + 1)); } catch (InterruptedException ignored) {}
 			}
 		}
 		throw new RuntimeException("TTS 재시도 초과 idx=" + idx);
 	}
 
-	private String preprocessTextForSpeech(String text) {
+	private String cleanText(String text) {
 		if (text == null) return "";
-
-		String cleaned = text;
-
-		cleaned = cleaned.replaceAll("\\\\n", ", ");
-		cleaned = cleaned.replaceAll("\\n", ", ");
-
-		cleaned = cleaned.replaceAll("(?i)요약\\s*내용\\s*[:：]", "");
-		cleaned = cleaned.replaceAll("뉴스\\s*\\d+\\s*\\.?", "");
-
-		cleaned = cleaned.replaceAll("[-•·]+\\s*", "");
-
-		cleaned = cleaned.replaceAll("\\s{2,}", " ").trim();
-
-		if (!cleaned.endsWith(".")) cleaned += ".";
-
-		return cleaned;
+		return text.replaceAll("\\\\n", " ")
+				.replaceAll("요약\\s*내용[:：]", "")
+				.replaceAll("뉴스\\s*\\d+\\.?\\s*", "")
+				.replaceAll("\\s{2,}", " ")
+				.trim();
 	}
 }
