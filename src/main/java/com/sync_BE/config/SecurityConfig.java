@@ -37,7 +37,8 @@ public class SecurityConfig {
 		"/user/password/**",
 		"/mail/send",
 		"/mail/verify",
-		"/reissue"
+		"/reissue",
+		"/chat"
 	};
 
 	@Bean
