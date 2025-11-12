@@ -1,5 +1,6 @@
 package com.sync_BE.web.dto.chatDTO;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,6 +8,9 @@ import lombok.Setter;
 @Setter
 public class ChatRequestDTO {
     public String message;
-    public String clusterId;
-    public String sessionId;
+    @JsonProperty("cluster_id")
+    private String clusterId;
+
+    @JsonProperty("session_id")
+    private String sessionId;
 }
