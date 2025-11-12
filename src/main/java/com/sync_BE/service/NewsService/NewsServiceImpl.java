@@ -17,6 +17,7 @@ import com.sync_BE.security.CustomUserDetails;
 import org.bson.types.ObjectId;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -60,13 +61,18 @@ public class NewsServiceImpl implements NewsService {
 			newsSummaryRepository.deleteAll();
 			log.info("===== 기존 뉴스 데이터베이스 초기화 완료. =====");
 
-			List<String> jsonFiles = Arrays.asList("cluster_0_summary.json", "cluster_1_summary.json", "cluster_2_summary.json", "cluster_3_summary.json", "cluster_4_summary.json");
+			Resource[] resources = new PathMatchingResourcePatternResolver()
+					.getResources("classpath*:cluster_*_summary_rag.json");
 
-			for (String jsonFile : jsonFiles) {
-				log.info("---------- 처리 중인 JSON 파일: {} ----------", jsonFile);
-				Resource resource = new ClassPathResource(jsonFile);
+			log.info("총 {}개의 JSON 파일 발견됨.", resources.length);
+
+			for (Resource resource : resources) {
+				String fileName = resource.getFilename();
+				log.info("---------- 처리 중인 JSON 파일: {} ----------", fileName);
+
 				String jsonContent = new String(resource.getInputStream().readAllBytes());
-				log.info("읽은 JSON 파일 내용 (처음 100자): {}", jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
+				log.info("읽은 JSON 파일 내용 (처음 100자): {}",
+						jsonContent.substring(0, Math.min(jsonContent.length(), 100)) + "...");
 
 				Map<String, Object> jsonMap = objectMapper.readValue(jsonContent, Map.class);
 
