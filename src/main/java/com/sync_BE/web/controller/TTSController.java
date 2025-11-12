@@ -35,8 +35,11 @@ public class TTSController {
 		byte[] audioContent = ttsService.synthesizeMainSummary(userDetails, ttsRequestDTO, page, pageSize);
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentType(MediaType.valueOf("audio/mpeg"));
 		headers.set("Content-Disposition", "inline; filename=\"main-summary-page" + page + ".mp3\"");
+		headers.set("Accept-Ranges", "bytes");
+		headers.setCacheControl("no-cache, no-store, must-revalidate");
+		headers.add("Access-Control-Expose-Headers", "Content-Disposition, Accept-Ranges");
 		return ResponseEntity.ok().headers(headers).body(audioContent);
 	}
 
@@ -50,8 +53,11 @@ public class TTSController {
 		byte[] audioContent = ttsService.synthesizeNewsSummary(clusterId, userDetails, ttsRequestDTO);
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
 		headers.set("Content-Disposition", "inline; filename=\"news-" + clusterId + ".mp3\"");
+		headers.set("Accept-Ranges", "bytes");
+		headers.setCacheControl("no-cache, no-store, must-revalidate");
+		headers.add("Access-Control-Expose-Headers", "Content-Disposition, Accept-Ranges");
 		return ResponseEntity.ok().headers(headers).body(audioContent);
 	}
 
