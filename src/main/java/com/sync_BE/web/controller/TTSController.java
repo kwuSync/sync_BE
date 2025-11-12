@@ -38,10 +38,8 @@ public class TTSController {
 		byte[] audioContent;
 
 		if (text != null && !text.isBlank()) {
-			// ✅ 프론트에서 text 직접 전달한 경우
 			audioContent = ttsService.synthesizeDirectText(userDetails, text, ttsRequestDTO, page, pageSize);
 		} else {
-			// ✅ text가 없으면 뉴스 목록 기반으로 처리
 			audioContent = ttsService.synthesizeMainSummary(userDetails, ttsRequestDTO, page, pageSize);
 		}
 
